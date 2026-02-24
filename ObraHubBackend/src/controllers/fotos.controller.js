@@ -60,6 +60,7 @@ exports.upload = async (req, res) => {
 
     const foto = result.rows[0]
 
+    
     res.status(201).json({
       success: true,
       data: {
