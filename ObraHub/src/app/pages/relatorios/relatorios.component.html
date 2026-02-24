@@ -1,0 +1,64 @@
+<div class="card p-4">
+  <h4>Gerar Relatório</h4>
+  <form [formGroup]="form" (ngSubmit)="gerar()">
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">Nome do Empreendimento</label>
+        <input class="form-control" formControlName="nome" />
+      </div>
+      <div class="col-md-3 mb-3">
+        <label class="form-label">Data de Início</label>
+        <input type="date" class="form-control" formControlName="dataInicio" />
+      </div>
+      <div class="col-md-3 mb-3">
+        <label class="form-label">Previsão de Término</label>
+        <input type="date" class="form-control" formControlName="previsaoFim" />
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Dados a incluir</label>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" formControlName="andamento" id="andamento" />
+        <label class="form-check-label" for="andamento">Andamento da Obra</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" formControlName="financeiro" id="financeiro" />
+        <label class="form-check-label" for="financeiro">Relatório Financeiro</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" formControlName="problemas" id="problemas" />
+        <label class="form-check-label" for="problemas">Relatório de Problemas</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" formControlName="qualidade" id="qualidade" />
+        <label class="form-check-label" for="qualidade">Relatório de Qualidade</label>
+      </div>
+    </div>
+
+    <div class="row align-items-center">
+      <div class="col-md-4 mb-3">
+        <label class="form-label">Formato de Saída</label>
+        <div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" formControlName="formato" value="pdf" id="fmtPdf" />
+            <label class="form-check-label" for="fmtPdf">PDF</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" formControlName="formato" value="excel" id="fmtExcel" />
+            <label class="form-check-label" for="fmtExcel">Excel</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4 mb-3">
+        <label class="form-label">E-mail para envio (opcional)</label>
+        <input class="form-control" formControlName="email" placeholder="contato@empresa.com" />
+      </div>
+
+      <div class="col-md-4 mb-3 text-end">
+        <button class="btn btn-primary mt-2" type="submit">Gerar Relatório</button>
+      </div>
+    </div>
+  </form>
+</div>

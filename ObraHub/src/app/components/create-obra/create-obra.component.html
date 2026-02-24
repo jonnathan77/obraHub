@@ -1,0 +1,81 @@
+<div class="modal-overlay" *ngIf="isOpen">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Nova Obra</h5>
+        <button type="button" class="close-btn" (click)="close()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form [formGroup]="obraForm" (ngSubmit)="submit()">
+          <div class="form-group">
+            <label for="nome">Nome da Obra</label>
+            <input type="text" id="nome" class="input" formControlName="nome" />
+          </div>
+
+          <div class="form-group">
+            <label for="cliente">Cliente</label>
+            <input type="text" id="cliente" class="input" formControlName="cliente" />
+          </div>
+
+          <div class="form-group">
+            <label for="endereco">Endereço</label>
+            <input type="text" id="endereco" class="input" formControlName="endereco" />
+          </div>
+
+          <div class="form-group">
+            <label for="descricao">Descrição</label>
+            <textarea id="descricao" class="textarea" formControlName="descricao" rows="3"></textarea>
+          </div>
+
+          <div class="row">
+            <div class="form-group">
+              <label for="dataInicio">Data de Início</label>
+              <input type="date" id="dataInicio" class="input" formControlName="dataInicio" />
+            </div>
+
+            <div class="form-group">
+              <label for="dataFimPrevista">Data de Fim Prevista</label>
+              <input type="date" id="dataFimPrevista" class="input" formControlName="dataFimPrevista" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="form-group">
+              <label for="status">Status</label>
+              <select id="status" class="select" formControlName="status">
+                <option value="planejada">Planejada</option>
+                <option value="em_execucao">Em Execução</option>
+                <option value="pausada">Pausada</option>
+                <option value="concluida">Concluída</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="orcamentoPrevisto">Orçamento Previsto (R$)</label>
+              <input
+                type="number"
+                id="orcamentoPrevisto"
+                class="input"
+                formControlName="orcamentoPrevisto"
+                step="0.01"
+                placeholder="0,00"
+              />
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="close()">
+              Cancelar
+            </button>
+            <button type="submit" [disabled]="obraForm.invalid" class="btn-save">
+              Criar Obra
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

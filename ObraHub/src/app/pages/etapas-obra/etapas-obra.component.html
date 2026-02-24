@@ -1,0 +1,68 @@
+<div>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5><i class="bi bi-check2-all"></i> Etapas da Obra</h5>
+    <button class="btn btn-sm btn-primary" (click)="mostrarForm = !mostrarForm">
+      <i class="bi bi-plus-circle"></i> Adicionar Etapa
+    </button>
+  </div>
+
+  <!-- Formulário de Adição -->
+  <div *ngIf="mostrarForm" class="card mb-3 p-3 bg-light">
+    <div class="row">
+      <div class="col-md-4 mb-2">
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Nome da etapa"
+          [(ngModel)]="novaEtapa.nome">
+      </div>
+      <div class="col-md-4 mb-2">
+        <input
+          type="date"
+          class="form-control"
+          [(ngModel)]="novaEtapa.dataPrevista">
+      </div>
+      <div class="col-md-4 mb-2">
+        <button class="btn btn-success me-2" (click)="adicionarEtapa()">Salvar</button>
+        <button class="btn btn-secondary" (click)="mostrarForm = false">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lista de Etapas -->
+  <div *ngIf="etapas.length > 0" class="list-group">
+    <div *ngFor="let etapa of etapas" class="list-group-item p-3">
+      <div class="row align-items-center">
+        <div class="col-md-3">
+          <h6 class="mb-0">{{ etapa.nome }}</h6>
+        </div>
+        <div class="col-md-2">
+          <span class="badge" [style.background-color]="getStatusColor(etapa.status)">
+            {{ getStatusLabel(etapa.status) }}
+          </span>
+        </div>
+        <div class="col-md-3">
+          <div class="progress">
+            <div class="progress-bar" [style.width.%]="etapa.progresso">
+              {{ etapa.progresso }}%
+            </div>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <small class="text-muted">
+            {{ etapa.dataPrevista | date:'dd/MM/yyyy' }}
+          </small>
+        </div>
+        <div class="col-md-2 text-end">
+          <button class="btn btn-sm btn-danger" (click)="deletarEtapa(etapa)">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="etapas.length === 0" class="alert alert-info mt-3">
+    Nenhuma etapa cadastrada
+  </div>
+</div>

@@ -1,0 +1,219 @@
+<div *ngIf="loading" class="d-flex justify-content-center align-items-center" style="height: 400px;">
+  <div class="spinner-border" role="status">
+    <span class="visually-hidden">Carregando...</span>
+  </div>
+</div>
+
+<!-- MODAL DE EDIÇÃO -->
+<div *ngIf="modoEdicao && obraEditavel" class="modal-backdrop show" style="display: block;">
+  <div class="modal show d-block" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Editar Obra</h5>
+          <button type="button" class="btn-close" aria-label="Close" (click)="cancelarEdicao()"></button>
+        </div>
+        <div class="modal-body">
+          <form>
+            <div class="mb-3">
+              <label for="nome" class="form-label">Nome da Obra</label>
+              <input type="text" class="form-control" id="nome" [(ngModel)]="obraEditavel.name" name="name">
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" [(ngModel)]="obraEditavel.status" name="status">
+                  <option value="planejada">Planejada</option>
+                  <option value="em_execucao">Em Execução</option>
+                  <option value="pausada">Pausada</option>
+                  <option value="concluida">Concluída</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="endereco" class="form-label">Endereço</label>
+                <input type="text" class="form-control" id="endereco" [(ngModel)]="obraEditavel.endereco" name="endereco">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="descricao" class="form-label">Descrição</label>
+              <textarea class="form-control" id="descricao" rows="3" [(ngModel)]="obraEditavel.descricao" name="descricao"></textarea>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="dataInicio" class="form-label">Data de Início</label>
+                <input type="date" class="form-control" id="dataInicio" 
+                  [(ngModel)]="obraEditavel.dataInicio" name="dataInicio">
+              </div>
+              <div class="col-md-6 mb-3">
+                <label for="dataFim" class="form-label">Data Prevista de Término</label>
+                <input type="date" class="form-control" id="dataFim" 
+                  [(ngModel)]="obraEditavel.dataFimPrevista" name="dataFimPrevista">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="orcamento" class="form-label">Orçamento Previsto (R$)</label>
+              <input type="number" class="form-control" id="orcamento" 
+                [(ngModel)]="obraEditavel.orcamentoPrevisto" name="orcamentoPrevisto" step="0.01">
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="cancelarEdicao()" [disabled]="salvando">Cancelar</button>
+          <button type="button" class="btn btn-primary" (click)="salvarEdicao()" [disabled]="salvando">
+            <span *ngIf="salvando" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            {{ salvando ? 'Salvando...' : 'Salvar Alterações' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="!loading && obra" class="container-fluid p-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <a href="/obras" class="btn btn-outline-secondary btn-sm me-2">
+        <i class="bi bi-arrow-left"></i> Voltar
+      </a>
+      <h1 class="d-inline">{{ obra.name }}</h1>
+    </div>
+
+  </div>
+
+  <div class="row mb-4">
+    <div class="col-md-3 mb-3">
+      <div class="card-resumo">
+        <p class="label">Status</p>
+        <p class="value">
+          <span class="badge" [style.background-color]="getStatusColor(obra.status)">
+            {{ obra.status | titlecase }}
+          </span>
+        </p>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card-resumo">
+        <p class="label">Descrição</p>
+        <p class="value">{{ obra.descricao || '-' }}</p>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card-resumo">
+        <p class="label">Progresso</p>
+        <p class="value">{{ calcularProgresso() }}%</p>
+        <div class="progress">
+          <div class="progress-bar" [style.width.%]="calcularProgresso()"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 mb-3">
+      <div class="card-resumo">
+        <p class="label">Custo Total</p>
+        <p class="value">R$ {{ (calcularCustoTotal() | number:'1.0-0') }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <ul class="nav nav-tabs card-header-tabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link"
+          [class.active]="abaSelecionada === 'resumo'"
+          (click)="abaSelecionada = 'resumo'"
+          type="button">
+          <i class="bi bi-info-circle"></i> Resumo
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link"
+          [class.active]="abaSelecionada === 'etapas'"
+          (click)="abaSelecionada = 'etapas'"
+          type="button">
+          <i class="bi bi-check2-all"></i> Etapas
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link"
+          [class.active]="abaSelecionada === 'ocorrencias'"
+          (click)="abaSelecionada = 'ocorrencias'"
+          type="button">
+          <i class="bi bi-card-list"></i> Ocorrências
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link"
+          [class.active]="abaSelecionada === 'fotos'"
+          (click)="abaSelecionada = 'fotos'"
+          type="button">
+          <i class="bi bi-image"></i> Fotos
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button
+          class="nav-link"
+          [class.active]="abaSelecionada === 'custos'"
+          (click)="abaSelecionada = 'custos'"
+          type="button">
+          <i class="bi bi-cash-coin"></i> Custos
+        </button>
+      </li>
+    </ul>
+
+    <div class="card-body">
+
+      <div *ngIf="abaSelecionada === 'resumo'">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <p><strong>Endereço:</strong></p>
+            <p>{{ obra.endereco }}</p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <p><strong>Data de Início:</strong></p>
+            <p>{{ obra.dataInicio | date:'dd/MM/yyyy' }}</p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <p><strong>Data Prevista:</strong></p>
+            <p>{{ obra.dataFimPrevista | date:'dd/MM/yyyy' }}</p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <p><strong>Orçamento Previsto:</strong></p>
+            <p>R$ {{ (obra.orcamentoPrevisto | number:'1.0-0') }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="abaSelecionada === 'resumo'">
+        <h6>Equipe do Projeto:</h6>
+
+      </div>
+
+      <div *ngIf="abaSelecionada === 'etapas'">
+        <app-lista-etapas [obraId]="obraId" [etapas]="etapas"></app-lista-etapas>
+      </div>
+
+      <div *ngIf="abaSelecionada === 'ocorrencias'">
+        <app-lista-ocorrencias [obraId]="obraId" [ocorrencias]="ocorrencias"></app-lista-ocorrencias>
+      </div>
+
+      <div *ngIf="abaSelecionada === 'fotos'">
+        <app-lista-fotos [obraId]="obraId"></app-lista-fotos>
+      </div>
+
+      <div *ngIf="abaSelecionada === 'custos'">
+        <app-lista-custos [obraId]="obraId" [custos]="custos"></app-lista-custos>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="!loading && !obra" class="alert alert-danger m-4">
+  Obra não encontrada
+</div>
