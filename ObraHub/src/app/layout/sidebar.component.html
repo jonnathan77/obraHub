@@ -1,0 +1,22 @@
+<aside class="sidebar" [class.collapsed]="!(isOpen$ | async)">
+  <div class="sidebar-header">
+    <h5>Menu</h5>
+    <button class="btn-toggle d-lg-none" (click)="toggleSidebar()" title="Toggle menu">
+      <i class="bi bi-x-lg"></i>
+    </button>
+  </div>
+<nav class="sidebar-nav">
+  <ng-container *ngFor="let item of menuItems">
+    <a
+      *ngIf="item.visivel"
+      [routerLink]="item.route"
+      routerLinkActive="active"
+      class="sidebar-item"
+      (click)="onItemClick()">
+
+      <i [class]="'bi ' + item.icon"></i>
+      <span>{{ item.label }}</span>
+    </a>
+  </ng-container>
+</nav>
+</aside>
