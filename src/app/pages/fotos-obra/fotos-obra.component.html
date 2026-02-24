@@ -1,0 +1,46 @@
+<div>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5><i class="bi bi-image"></i> Galeria de Fotos</h5>
+    <button class="btn btn-sm btn-primary" (click)="mostrarForm = !mostrarForm">
+      <i class="bi bi-plus-circle"></i> Adicionar Foto
+    </button>
+  </div>
+
+  <!-- Formulário de Upload -->
+  <div *ngIf="mostrarForm" class="card mb-3 p-3 bg-light">
+    <div class="mb-2">
+      <label class="form-label">Selecione a foto:</label>
+      <input
+        type="file"
+        accept="image/*"
+        class="form-control"
+        (change)="uploadFoto($event)"
+        [disabled]="enviando">
+    </div>
+    <div class="mb-2">
+      <label class="form-label">Descrição (opcional):</label>
+      <input
+        type="text"
+        class="form-control"
+        placeholder="Descrição da foto"
+        [(ngModel)]="descricaoFoto"
+        [disabled]="enviando">
+    </div>
+    <button class="btn btn-success me-2" [disabled]="enviando">
+      <span *ngIf="!enviando; else enviandoSpinner">Enviar</span>
+      <ng-template #enviandoSpinner>
+        <span class="spinner-border spinner-border-sm me-2"></span>Enviando...
+      </ng-template>
+    </button>
+    <button class="btn btn-secondary" (click)="mostrarForm = false" [disabled]="enviando">Cancelar</button>
+  </div>
+
+  <!-- Galeria -->
+  <div *ngIf="fotos.length > 0" class="galeria">
+    <div class="galeria-item" *ngFor="let foto of fotos">
+      <img [src]="foto.imagemUrl" [alt]="foto.descricao" class="galeria-imagem">
+      <div class="galeria-info">
+        <p class="galeria-data" *ngIf="foto.criadoEm">{{ foto.criadoEm | date:'dd/MM/yyyy HH:mm' }}</p>
+        <p class="galeria-desc">{{ foto.descricao || 'Sem descrição' }}</p>
+        <button class="btn btn-sm btn-danger" (click)="deletarFoto(foto)">
+          <i class="bi bi-trash"></i> Deletar

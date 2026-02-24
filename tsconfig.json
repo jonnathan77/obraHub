@@ -18,6 +18,12 @@
     "target": "ES2022",
     "module": "ES2022",
     "useDefineForClassFields": false,
+    "baseUrl": "./src",
+    "paths": {
+      "@core/*": ["app/core/*"],
+      "@models/*": ["app/core/models/*"],
+      "@services/*": ["app/core/services/*"]
+    },
     "lib": [
       "ES2022",
       "dom"
