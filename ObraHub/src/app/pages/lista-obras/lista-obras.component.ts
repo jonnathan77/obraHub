@@ -53,10 +53,10 @@ export class ListaObrasComponent implements OnInit {
 
   getStatusColor(status: string): string {
     const colors: { [key: string]: string } = {
-      'planejada': '#6c757d',
-      'em_execucao': '#0d6efd',
-      'pausada': '#ffc107',
-      'concluida': '#198754'
+      'Planejada': '#6c757d',
+      'Execucao': '#0d6efd',
+      'Pausada': '#ffc107',
+      'Concluida': '#198754'
     };
     return colors[status] || '#6c757d';
   }

@@ -119,7 +119,8 @@
   </div>
 
   <div class="card shadow-sm">
-    <ul class="nav nav-tabs card-header-tabs" role="tablist">
+    <!-- TABS PARA DESKTOP -->
+    <ul class="nav nav-tabs card-header-tabs d-none d-md-flex" role="tablist">
       <li class="nav-item" role="presentation">
         <button
           class="nav-link"
@@ -167,7 +168,88 @@
       </li>
     </ul>
 
-    <div class="card-body">
+    <!-- ACORDEAO PARA MOBILE -->
+    <div class="accordion d-md-none" id="accordionAbas">
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#resumoAcordeon">
+            <i class="bi bi-info-circle me-2"></i> Resumo
+          </button>
+        </h2>
+        <div id="resumoAcordeon" class="accordion-collapse collapse show" data-bs-parent="#accordionAbas">
+          <div class="accordion-body">
+            <div class="row">
+              <div class="col-12 mb-3">
+                <p><strong>Endereço:</strong></p>
+                <p>{{ obra.endereco }}</p>
+              </div>
+              <div class="col-12 mb-3">
+                <p><strong>Data de Início:</strong></p>
+                <p>{{ obra.dataInicio | date:'dd/MM/yyyy' }}</p>
+              </div>
+              <div class="col-12 mb-3">
+                <p><strong>Data Prevista:</strong></p>
+                <p>{{ obra.dataFimPrevista | date:'dd/MM/yyyy' }}</p>
+              </div>
+              <div class="col-12 mb-3">
+                <p><strong>Orçamento Previsto:</strong></p>
+                <p>R$ {{ (obra.orcamentoPrevisto | number:'1.0-0') }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#etapasAcordeon">
+            <i class="bi bi-check2-all me-2"></i> Etapas
+          </button>
+        </h2>
+        <div id="etapasAcordeon" class="accordion-collapse collapse" data-bs-parent="#accordionAbas">
+          <div class="accordion-body">
+            <app-lista-etapas [obraId]="obraId" [etapas]="etapas"></app-lista-etapas>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#ocorrenciasAcordeon">
+            <i class="bi bi-card-list me-2"></i> Ocorrências
+          </button>
+        </h2>
+        <div id="ocorrenciasAcordeon" class="accordion-collapse collapse" data-bs-parent="#accordionAbas">
+          <div class="accordion-body">
+            <app-lista-ocorrencias [obraId]="obraId" [ocorrencias]="ocorrencias"></app-lista-ocorrencias>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#fotosAcordeon">
+            <i class="bi bi-image me-2"></i> Fotos
+          </button>
+        </h2>
+        <div id="fotosAcordeon" class="accordion-collapse collapse" data-bs-parent="#accordionAbas">
+          <div class="accordion-body">
+            <app-lista-fotos [obraId]="obraId"></app-lista-fotos>
+          </div>
+        </div>
+      </div>
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#custosAcordeon">
+            <i class="bi bi-cash-coin me-2"></i> Custos
+          </button>
+        </h2>
+        <div id="custosAcordeon" class="accordion-collapse collapse" data-bs-parent="#accordionAbas">
+          <div class="accordion-body">
+            <app-lista-custos [obraId]="obraId" [custos]="custos"></app-lista-custos>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body d-none d-md-block">
 
       <div *ngIf="abaSelecionada === 'resumo'">
         <div class="row">

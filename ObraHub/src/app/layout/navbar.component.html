@@ -12,7 +12,7 @@
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
         <li class="nav-item">
-          <a class="nav-link" href="#"><i class="bi bi-person-circle"></i> Perfil</a>
+          <a class="nav-link" href="#" (click)="abrirModalPerfil(); $event.preventDefault()"><i class="bi bi-person-circle"></i> Perfil</a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="#"><i class="bi bi-box-arrow-right"></i> Sair</a>
@@ -21,3 +21,71 @@
     </div>
   </div>
 </nav>
+
+<!-- MODAL DE PERFIL -->
+<div *ngIf="showProfileModal" class="modal-backdrop show" style="display: block;">
+  <div class="modal show d-block" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Meu Perfil</h5>
+          <button type="button" class="btn-close" aria-label="Close" (click)="fecharModalPerfil()"></button>
+        </div>
+        <div class="modal-body" *ngIf="usuarioEditavel">
+          <form>
+            <div class="mb-3">
+              <label for="nome" class="form-label">Nome</label>
+              <input type="text" class="form-control" id="nome" [(ngModel)]="usuarioEditavel.name" name="name">
+            </div>
+            
+            <div class="mb-3">
+              <label for="email" class="form-label">E-mail</label>
+              <input type="email" class="form-control" id="email" [(ngModel)]="usuarioEditavel.email" name="email">
+            </div>
+
+            <div class="mb-3">
+              <label for="empresa" class="form-label">Empresa</label>
+              <input type="text" class="form-control" id="empresa" [(ngModel)]="usuarioEditavel.empresa" name="empresa">
+            </div>
+
+            <hr />
+
+            <div *ngIf="!alterandoSenha">
+              <button type="button" class="btn btn-outline-primary" (click)="alterandoSenha = true">
+                <i class="bi bi-key"></i> Alterar Senha
+              </button>
+            </div>
+
+            <div *ngIf="alterandoSenha" class="mt-3">
+              <h6>Alterar Senha</h6>
+              <div class="mb-3">
+                <label for="novaSenha" class="form-label">Nova Senha</label>
+                <input type="password" class="form-control" id="novaSenha" [(ngModel)]="novaSenha" name="novaSenha">
+              </div>
+              <div class="mb-3">
+                <label for="confirmaSenha" class="form-label">Confirmar Senha</label>
+                <input type="password" class="form-control" id="confirmaSenha" [(ngModel)]="confirmaSenha" name="confirmaSenha">
+              </div>
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-primary" (click)="alterarSenha()" [disabled]="salvando">
+                  <span *ngIf="salvando" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                  {{ salvando ? 'Atualizando...' : 'Atualizar Senha' }}
+                </button>
+                <button type="button" class="btn btn-secondary" (click)="cancelarAlteracao()" [disabled]="salvando">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="fecharModalPerfil()" [disabled]="salvando">Fechar</button>
+          <button type="button" class="btn btn-primary" (click)="salvarPerfilUsuario()" [disabled]="salvando">
+            <span *ngIf="salvando" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            {{ salvando ? 'Salvando...' : 'Salvar Alterações' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

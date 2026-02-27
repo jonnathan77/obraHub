@@ -4,8 +4,9 @@ import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { Ocorrencia } from '../models';
 import { AuthService } from './auth.service';
+import { environment } from '../../../environments/environment';
 
-const API = 'http://localhost:3000';
+const API = environment.apiUrl;
 
 @Injectable({
   providedIn: 'root'

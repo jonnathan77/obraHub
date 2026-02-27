@@ -3,16 +3,11 @@
   <form [formGroup]="form" (ngSubmit)="gerar()">
     <div class="row">
       <div class="col-md-6 mb-3">
-        <label class="form-label">Nome do Empreendimento</label>
-        <input class="form-control" formControlName="nome" />
-      </div>
-      <div class="col-md-3 mb-3">
-        <label class="form-label">Data de Início</label>
-        <input type="date" class="form-control" formControlName="dataInicio" />
-      </div>
-      <div class="col-md-3 mb-3">
-        <label class="form-label">Previsão de Término</label>
-        <input type="date" class="form-control" formControlName="previsaoFim" />
+        <label class="form-label">Selecione a Obra</label>
+        <select class="form-select" formControlName="obraId">
+          <option value="">-- selecione --</option>
+          <option *ngFor="let o of obras" [value]="o.id">{{ o.name }}</option>
+        </select>
       </div>
     </div>
 

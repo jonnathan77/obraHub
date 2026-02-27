@@ -1,22 +1,41 @@
 .login-page {
   height: 100vh;
-  width: 100%;
-  background: #fff;
+  width: 100vw; /* ensure full viewport width */
+  /* light gradient background like design */
+  background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
   overflow: hidden;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
 }
 
 .login-card {
   width: 380px;
-  padding: 28px;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  padding: 32px 28px 28px;
+  background: #ffffff;
+  /* forcefully remove any border that might appear at top/around */
+  border: none !important;
+  border-top: none !important;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.login-card .logo {
+  /* using img instead of icon */
+  display: flex;
+  justify-content: center;
+}
+
+.login-card .favicon-logo {
+  width: 48px;
+  height: 48px;
 }
 
 .app-name {
   margin: 0 0 8px 0;
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   font-weight: 700;
   color: #212529;
   text-align: center;
@@ -30,9 +49,35 @@
 }
 
 .subtitle {
-  margin: 0 0 12px 0;
+  margin: 0 0 16px 0;
   color: #6c757d;
   text-align: center;
+}
+
+.input-group-text {
+  background: transparent;
+  border-right: none;
+  color: #6c757d;
+}
+
+.input-group .form-control {
+  border-left: none;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #6c757d;
+}
+
+.btn-login {
+  background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+  border: none;
+  padding: 10px 0;
+  font-weight: 600;
 }
 
 .forgot-link {

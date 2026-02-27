@@ -1,1 +1,15 @@
 /* You can add global styles to this file, and also import other style files */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  /* apply same background so no white strip shows above login page */
+  background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+}
+
+body {
+  /* ensure the login page gradient fills entire window */
+  overflow-x: hidden;
+}

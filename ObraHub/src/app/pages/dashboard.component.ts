@@ -42,15 +42,16 @@ export class DashboardComponent implements OnInit {
   carregarDados(): void {
     this.obrasService.getAll().subscribe((obras: Obra[]) => {
       this.obras = obras;
-      this.obrasAtivas = obras.filter((o: Obra) => o.status === 'em_execucao').length;
+      console.log('Obras carregadas:', obras);
+      this.obrasAtivas = obras.filter((o: Obra) => o.status === 'Execucao').length;
       this.obrasAtrasadas = 0;
       
       // Contar status
       this.statusStats = {
-        planejada: obras.filter((o: Obra) => o.status === 'planejada').length,
-        em_execucao: obras.filter((o: Obra) => o.status === 'em_execucao').length,
-        pausada: obras.filter((o: Obra) => o.status === 'pausada').length,
-        concluida: obras.filter((o: Obra) => o.status === 'concluida').length
+        planejada: obras.filter((o: Obra) => o.status === 'Planejada').length,
+        em_execucao: obras.filter((o: Obra) => o.status === 'Execucao').length,
+        pausada: obras.filter((o: Obra) => o.status === 'Pausada').length,
+        concluida: obras.filter((o: Obra) => o.status === 'Concluida').length
       };
     });
 
@@ -70,10 +71,10 @@ export class DashboardComponent implements OnInit {
 
   getStatusColor(status: string): string {
     const colors: { [key: string]: string } = {
-      'planejada': '#6c757d',
-      'em_execucao': '#0d6efd',
-      'pausada': '#ffc107',
-      'concluida': '#198754'
+      'Planejada': '#6c757d',
+      'Execucao': '#0d6efd',
+      'Pausada': '#ffc107',
+      'Concluida': '#198754'
     };
     return colors[status] || '#6c757d';
   }
