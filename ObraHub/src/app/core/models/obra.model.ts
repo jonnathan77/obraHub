@@ -2,7 +2,7 @@ export interface Obra {
   id: string;
   name: string;
   endereco: string;
-  status: 'planejada' | 'em_execucao' | 'pausada' | 'concluida';
+  status: 'Planejada' | 'Execucao' | 'Pausada' | 'Concluida';
   dataInicio: Date;
   dataFimPrevista?: Date;
   orcamentoPrevisto?: number;
@@ -17,7 +17,7 @@ export interface Obra {
 export interface ObrasLegacy {
   id: string;
   endereco: string;
-  status: 'planejada' | 'em_execucao' | 'pausada' | 'concluida';
+  status: 'Planejada' | 'Execucao' | 'Pausada' | 'Concluida';
   dataInicio: Date;
   dataPrevista: Date;
   orcamentoTotal?: number;

@@ -1,7 +1,17 @@
 <div>
   <div class="mb-4">
-    <h5 class="mb-3"><i class="bi bi-cash-coin"></i> Custos da Obra</h5>
-    
+    <div>
+      <div>
+        <h5 class="mb-3"><i class="bi bi-cash-coin"></i> Custos da Obra</h5>
+      </div>
+
+      <div style="justify-content: end; display: flex; margin-bottom: 5px;">
+        <button class="btn btn-sm btn-primary" (click)="carregarCustos()">
+          <i class="bi bi-plus-circle"></i> Adicionar Etapa
+        </button>
+      </div>
+    </div>
+
     <div class="row">
       <div class="col-md-3 mb-3">
         <div class="custo-card">

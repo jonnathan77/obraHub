@@ -7,7 +7,7 @@ import { RelatoriosComponent } from './pages/relatorios/relatorios.component';
 import { ConfiguracoesComponent } from './pages/configuracoes/configuracoes.component';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
+  { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'dashboard', component: DashboardComponent },
   { path: 'relatorios', component: RelatoriosComponent },

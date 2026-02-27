@@ -41,7 +41,8 @@
 
 .layout-container.no-sidebar .content-area {
   overflow: hidden;
-  background-color: #fff;
+  /* use same gradient as login for full-page background */
+  background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
 }
 
 @media (max-width: 768px) {

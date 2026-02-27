@@ -35,7 +35,7 @@ export class LoginComponent implements OnInit {
         next: (res) => {
           this.loading = false;
           // navega para dashboard/lista de obras
-          this.router.navigate(['/']);
+          this.router.navigate(['/dashboard']);
         },
         error: (err) => {
           this.loading = false;
