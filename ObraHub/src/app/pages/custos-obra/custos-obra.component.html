@@ -66,6 +66,8 @@
           <th>Categoria</th>
           <th>Descrição</th>
           <th>Data</th>
+          <th class="text-end">Qtd</th>
+          <th class="text-end">Unitário</th>
           <th class="text-end">Valor</th>
         </tr>
       </thead>
@@ -76,12 +78,14 @@
           </td>
           <td>{{ custo.descricao }}</td>
           <td>{{ custo.data | date:'dd/MM/yyyy' }}</td>
+          <td class="text-end">{{ custo.quantidade || '-' }}</td>
+          <td class="text-end">R$ {{ (custo.valorunitario || 0 | number:'1.0-0') }}</td>
           <td class="text-end fw-bold">R$ {{ (custo.valor | number:'1.0-0') }}</td>
         </tr>
       </tbody>
       <tfoot class="table-light">
         <tr>
-          <td colspan="3" class="text-end"><strong>TOTAL</strong></td>
+          <td colspan="5" class="text-end"><strong>TOTAL</strong></td>
           <td class="text-end fw-bold">R$ {{ (getTotalCustos() | number:'1.0-0') }}</td>
         </tr>
       </tfoot>

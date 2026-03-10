@@ -117,7 +117,7 @@ export class RelatoriosComponent implements OnInit {
     let content = `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body>`;
 
     // header
-    content += `<div class="header"><img src="https://via.placeholder.com/120x40?text=ObraHub" alt="ObraHub"/><div class="header-title">RELATÓRIO DA OBRA</div></div>`;
+    content += `<div class="header"><img src="https://res.cloudinary.com/dcu5ccvzu/image/upload/v1773104064/ObraHub_4_miophn.png" alt="ObraHub"/><div class="header-title">RELATÓRIO DA OBRA</div></div>`;
     content += `<div class="divider-orange"></div>`;
 
     // resumo
@@ -165,7 +165,8 @@ export class RelatoriosComponent implements OnInit {
     // aggregate by category
     const totals: { [cat: string]: number } = {};
     this.custos.forEach(c => {
-      totals[c.categoria] = (totals[c.categoria] || 0) + c.valor;
+      const categoria = c.categoria ?? 'Sem Categoria';
+      totals[categoria] = (totals[categoria] ?? 0) + (c.valor ?? 0);
     });
     const labels = Object.keys(totals);
     const values = labels.map(l => totals[l]);
@@ -221,7 +222,7 @@ export class RelatoriosComponent implements OnInit {
         html += `<tr><td>${c.categoria}</td><td>${c.descricao}</td><td>${this.formatDate(c.data)}</td><td>R$ ${c.valor}</td></tr>`;
       });
       html += '</tbody></table>';
-      const total = this.custos.reduce((s, c) => s + c.valor, 0);
+      const total = this.custos.reduce((s, c) => s + (c.valor || 0), 0);
       html += `<p class="total-row"><strong>Total:</strong> <span class="total-value">R$ ${total}</span></p>`;
       html += '</div>'; // end table column
 

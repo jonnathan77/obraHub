@@ -5,6 +5,9 @@ import { DetalheObraComponent } from './pages/detalhe-obra/detalhe-obra.componen
 import { LoginComponent } from './pages/login/login.component';
 import { RelatoriosComponent } from './pages/relatorios/relatorios.component';
 import { ConfiguracoesComponent } from './pages/configuracoes/configuracoes.component';
+import { MateriaisComponent } from './pages/materiais/materiais.component';
+import { MovimentacoesComponent } from './pages/movimentacoes/movimentacoes.component';
+import { ChecklistAtividadesComponent } from './pages/checklist-atividades/checklist-atividades.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
@@ -13,5 +16,8 @@ export const routes: Routes = [
   { path: 'relatorios', component: RelatoriosComponent },
   { path: 'configuracoes', component: ConfiguracoesComponent },
   { path: 'obras', component: ListaObrasComponent },
-  { path: 'obras/:id', component: DetalheObraComponent }
+  { path: 'obras/:id', component: DetalheObraComponent },
+  { path: 'materiais', component: MateriaisComponent },
+  { path: 'movimentacoes', component: MovimentacoesComponent },
+  { path: 'checklist-atividades', component: ChecklistAtividadesComponent }
 ];

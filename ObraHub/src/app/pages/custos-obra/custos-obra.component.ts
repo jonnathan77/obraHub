@@ -28,13 +28,19 @@ export class ListaCustosComponent implements OnInit {
   }
 
   carregarCustos(): void {
+    console.log('Carregando custos para obraId:', this.obraId);
+    // request data from backend view. if the server isn't running you'll get [] here.
     this.custosService.getByObraId(this.obraId).subscribe(custos => {
-      this.custos = custos;
+      console.log('custos carregados:', custos);
+      this.custos = custos || [];
+    }, error => {
+      console.error('Erro ao carregar custos:', error);
+      this.custos = [];
     });
   }
 
   getTotalCustos(): number {
-    return this.custos.reduce((sum, c) => sum + c.valor, 0);
+    return this.custos.reduce((sum, c) => sum + (c.valor || 0), 0);
   }
 
   getRestante(): number {
