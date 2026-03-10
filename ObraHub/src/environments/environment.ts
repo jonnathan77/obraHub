@@ -1,4 +1,5 @@
 export const environment = {
-  production: false,
+  production: true,
   apiUrl: 'https://obrahub-1.onrender.com'
+  //apiUrl: 'http://localhost:3000'
 };

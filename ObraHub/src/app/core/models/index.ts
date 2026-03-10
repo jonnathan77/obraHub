@@ -3,3 +3,8 @@ export * from './etapa.model';
 export * from './ocorrencia.model';
 export * from './custo.model';
 export * from './foto.model';
+export * from './material.model';
+export * from './movimentacao.model';
+export * from './atividade.model';
+export * from './estrutura.model';
+export * from './template-atividade.model';

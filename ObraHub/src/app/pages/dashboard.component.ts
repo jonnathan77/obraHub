@@ -42,7 +42,6 @@ export class DashboardComponent implements OnInit {
   carregarDados(): void {
     this.obrasService.getAll().subscribe((obras: Obra[]) => {
       this.obras = obras;
-      console.log('Obras carregadas:', obras);
       this.obrasAtivas = obras.filter((o: Obra) => o.status === 'Execucao').length;
       this.obrasAtrasadas = 0;
       
@@ -65,7 +64,8 @@ export class DashboardComponent implements OnInit {
 
     this.custosService.getAll().subscribe((custos: Custo[]) => {
       this.custos = custos;
-      this.custosTotal = custos.reduce((sum: number, c: Custo) => sum + c.valor, 0);
+      console.log('Custos carregados:', custos);
+      this.custosTotal = this.custos.reduce((s, c) => s + (c.valor || 0), 0);
     });
   }
 

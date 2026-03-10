@@ -1,7 +1,12 @@
 import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { catchError, map, delay } from 'rxjs/operators';
 import { Custo } from '../models';
+import { AuthService } from './auth.service';
+import { environment } from '../../../environments/environment';
+
+const API = environment.apiUrl;
 
 @Injectable({
   providedIn: 'root'
@@ -42,14 +47,51 @@ export class CustosService {
     }
   ];
 
-  constructor() { }
+  constructor(private http: HttpClient, private auth: AuthService) { }
+
+  private headers(): { headers: HttpHeaders } {
+    const token = this.auth.getToken();
+    return {
+      headers: new HttpHeaders({
+        Authorization: token ? `Bearer ${token}` : ''
+      })
+    };
+  }
 
   getAll(): Observable<Custo[]> {
     return of(this.custos).pipe(delay(500));
   }
 
   getByObraId(obraId: string): Observable<Custo[]> {
-    return of(this.custos.filter(c => c.obraId === obraId)).pipe(delay(500));
+    // fetch from backend view (vw_custos_obra) and adapt to Custo model
+    return this.http.get<{ success: boolean; data: any[] }>(
+      `${API}/custos/obra/${obraId}`,
+      this.headers()
+    ).pipe(
+      map(response => {
+        const rows: any[] = (response as any).data || [];
+        // convert each row returned by the view into the Custo interface
+        console.log('Custos convertidos:', response, rows);
+        return rows.map((r: any) => {
+          return {
+            // optional id if available in the view
+            id: r.id ? String(r.id) : undefined,
+            obraId: String(r.obraid || obraId),
+            descricao: r.nome || r.descricao || '',
+            categoria: r.tipo || r.categoria || '',
+            quantidade: r.quantidade != null ? Number(r.quantidade) : undefined,
+            valorunitario: r.valorunitario != null ? parseFloat(r.valorunitario) : undefined,
+            valor: parseFloat(r.valortotal || r.valor || 0) || 0,
+            data: r.datamovimentacao ? new Date(r.datamovimentacao) : (r.data ? new Date(r.data) : new Date())
+          } as Custo;
+        });
+
+      }),
+      catchError(error => {
+        console.error('Erro ao listar custos:', error);
+        return of([]);
+      })
+    );
   }
 
   getById(id: string): Observable<Custo | undefined> {
@@ -86,7 +128,7 @@ export class CustosService {
   getTotalByObraId(obraId: string): Observable<number> {
     const total = this.custos
       .filter(c => c.obraId === obraId)
-      .reduce((sum, c) => sum + c.valor, 0);
+      .reduce((sum, c) => sum + (c.valor || 0), 0);
     return of(total).pipe(delay(500));
   }
 }

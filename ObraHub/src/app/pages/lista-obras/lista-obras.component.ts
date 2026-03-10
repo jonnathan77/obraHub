@@ -25,10 +25,10 @@ export class ListaObrasComponent implements OnInit {
 
   statusOptions = [
     { value: '', label: 'Todos' },
-    { value: 'planejada', label: 'Planejada' },
-    { value: 'em_execucao', label: 'Em Execução' },
-    { value: 'pausada', label: 'Pausada' },
-    { value: 'concluida', label: 'Concluída' }
+    { value: 'Planejada', label: 'Planejada' },
+    { value: 'Execucao', label: 'Em Execução' },
+    { value: 'Pausada', label: 'Pausada' },
+    { value: 'Concluida', label: 'Concluída' }
   ];
 
   constructor(private obrasService: ObrasService) { }
@@ -41,7 +41,6 @@ export class ListaObrasComponent implements OnInit {
     this.loading = true;
     this.obrasService.getAll().subscribe((obras: Obra[]) => {
       this.obras = obras;
-      console.log('Obras carregadas:', obras);
       this.loading = false;
     });
   }
