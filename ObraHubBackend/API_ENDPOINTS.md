@@ -104,7 +104,41 @@ Authorization: Bearer {token}
 
 ---
 
-## 📝 OCORRÊNCIAS
+## � CUSTOS
+
+### GET `/custos/obra/:obra_id`
+Retorna os lançamentos de materiais relacionados à obra. Os dados vêm da view `vw_custos_obra` criada no banco de dados. A query usada pelo servidor é equivalente a:
+
+```sql
+SELECT *
+FROM vw_custos_obra
+WHERE ObraId = $1;
+```
+
+Campos retornados (exemplos):
+
+```json
+{
+  "ObraId": 1,
+  "nome": "Concreto m³",
+  "tipo": "entrada",
+  "datamovimentacao": "2026-02-10",
+  "quantidade": 200,
+  "valorunitario": 60,
+  "valortotal": 12000
+}
+```
+
+A resposta da API será:
+
+```json
+{
+  "success": true,
+  "data": [ /* array com objetos como acima */ ]
+}
+```
+
+## �📝 OCORRÊNCIAS
 
 ### POST `/ocorrencias`
 **Criar nova ocorrência**
@@ -170,7 +204,43 @@ Authorization: Bearer {token}
 
 ---
 
-## 📸 FOTOS
+## � CUSTOS
+
+### GET `/custos/obra/:obra_id`
+Retorna os lançamentos de materiais relacionados à obra. Os dados vêm da view `vw_custos_obra` criada no banco de dados. A query executada no servidor é equivalente a:
+
+```sql
+SELECT *
+FROM vw_custos_obra
+WHERE ObraId = $1;
+```
+
+Campos típicos retornados:
+
+```json
+{
+  "ObraId": 1,
+  "nome": "Concreto m³",
+  "tipo": "entrada",
+  "datamovimentacao": "2026-02-10",
+  "quantidade": 200,
+  "valorunitario": 60,
+  "valortotal": 12000
+}
+```
+
+A resposta HTTP 200 terá o formato:
+
+```json
+{
+  "success": true,
+  "data": [ /* array com objetos como acima */ ]
+}
+```
+
+---
+
+## �📸 FOTOS
 
 ### POST `/fotos`
 **Fazer upload de foto**
