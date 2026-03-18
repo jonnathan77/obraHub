@@ -61,7 +61,7 @@ exports.listByObra = async (req, res) => {
 exports.create = async (req, res) => {
   try {
     const { id: obra_id } = req.params;
-    const { etapa, descricao, responsavel, estrutura_obra_id } = req.body;
+    const { etapa, descricao, responsavel, estrutura_id  } = req.body;
     const empresaId = req.user.empresaid;
 
     console.log(req.body);
@@ -106,7 +106,7 @@ exports.create = async (req, res) => {
 
     const result = await db.query(query, [
       obra_id,
-      estrutura_obra_id || null,
+      estrutura_id  || null,
       etapa_id,
       descricao,
       responsavel || null,
@@ -119,7 +119,7 @@ exports.create = async (req, res) => {
       data: {
         id: row.id,
         obra_id: row.obra_id,
-        estrutura_obra_id: row.estrutura_obra_id,
+        estrutura_id : row.estrutura_id ,
         etapa: row.etapa,
         descricao: row.descricao,
         responsavel: row.responsavel,
@@ -208,7 +208,7 @@ exports.update = async (req, res) => {
       data: {
         id: row.id,
         obraid: row.obraid,
-        etapa_id: etapa_id,
+        etapa_id: row.etapa_id,
         descricao: row.descricao,
         responsavel: row.responsavel,
         status: row.status,
@@ -245,3 +245,87 @@ exports.delete = async (req, res) => {
     res.status(500).json({ error: "Erro ao excluir atividade" });
   }
 };
+
+exports.checklist = async (req, res) => {
+  try {
+
+    const { id: obra_id } = req.params
+    const empresaId = req.user.empresaid
+
+    const query = `
+      SELECT
+        e.id AS estrutura_id,
+        e.nome AS unidade,
+        e.tipo,
+        et.nome AS etapa,
+        a.status
+      FROM estrutura_obra e
+      LEFT JOIN atividades a ON a.estrutura_id = e.id
+      LEFT JOIN etapa et ON et.id = a.etapa_id
+      WHERE e.obra_id = $1 and et.nome is not null
+      ORDER BY e.nome
+    `
+
+    const result = await db.query(query, [obra_id])
+
+    res.json({
+      success: true,
+      data: result.rows
+    })
+
+  } catch (error) {
+    console.error("Erro checklist:", error)
+    res.status(500).json({ error: "Erro ao carregar checklist" })
+  }
+}
+
+exports.updateStatus = async (req, res) => {
+  try {
+
+    const { estrutura_id, etapa, status } = req.body
+    const empresaId = req.user.empresaid
+
+    const etapaQuery = `
+      SELECT id FROM etapa
+      WHERE nome = $1
+      LIMIT 1
+    `
+
+    const etapaResult = await db.query(etapaQuery, [etapa])
+    const etapa_id = etapaResult.rows[0]?.id
+
+    if (!etapa_id) {
+      return res.status(400).json({ error: "Etapa não encontrada" })
+    }
+
+    const query = `
+      UPDATE atividades
+          SET status = $1,
+              data_conclusao = CASE 
+                  WHEN $1::varchar = 'concluido' 
+                  THEN NOW() 
+                  ELSE NULL 
+              END
+          WHERE estrutura_id = $2
+          AND etapa_id = $3
+          AND empresaid = $4
+          RETURNING *
+    `
+
+    const result = await db.query(query, [
+      status,
+      estrutura_id,
+      etapa_id,
+      empresaId
+    ])
+
+    res.json({
+      success: true,
+      data: result.rows[0]
+    })
+
+  } catch (error) {
+    console.error("Erro status:", error)
+    res.status(500).json({ error: "Erro ao atualizar status" })
+  }
+}
