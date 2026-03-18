@@ -72,74 +72,82 @@ exports.list = async (req, res) => {
  * garantindo que o material pertence à obra selecionada.
  */
 exports.create = async (req, res) => {
+  const client = await db.connect()
+
   try {
-    const { material_id, obra_id, tipo, quantidade, valor_unitario, data_movimentacao } = req.body
+    const {
+      material_nome,
+      unidade,
+      obra_id,
+      tipo,
+      quantidade,
+      valor_unitario,
+      data_movimentacao
+    } = req.body
+
     const empresaId = req.user.empresaid
 
-    if (!material_id || !obra_id || !tipo || quantidade == null || !data_movimentacao) {
-      return res.status(400).json({ error: 'material_id, obra_id, tipo, quantidade e data_movimentacao são obrigatórios' })
-    }
+    await client.query('BEGIN')
 
-    if (!['entrada', 'saida'].includes(tipo)) {
-      return res.status(400).json({ error: 'tipo deve ser "entrada" ou "saida"' })
-    }
-
-    const obraCheck = await db.query(
-      'SELECT id FROM obra WHERE id = $1 AND empresaid = $2',
-      [obra_id, empresaId]
+    // 1️⃣ procurar material existente
+    let material = await client.query(
+      `SELECT id 
+       FROM material 
+       WHERE obraid = $1 AND LOWER(nome) = LOWER($2)`,
+      [obra_id, material_nome]
     )
-    if (obraCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Obra não encontrada' })
+
+    let materialId
+
+    // 2️⃣ se não existir cria
+    if (material.rows.length === 0) {
+
+      const novoMaterial = await client.query(
+        `INSERT INTO material (obraid, nome, unidade)
+         VALUES ($1,$2,$3)
+         RETURNING id`,
+        [obra_id, material_nome, unidade]
+      )
+
+      materialId = novoMaterial.rows[0].id
+
+    } else {
+
+      materialId = material.rows[0].id
     }
 
-    const matCheck = await db.query(
-      `
-        SELECT m.id
-        FROM material m
-        JOIN obra o ON o.id = m.obraid
-        WHERE m.id = $1 AND m.obraid = $2 AND o.empresaid = $3
-      `,
-      [material_id, obra_id, empresaId]
-    )
-    if (matCheck.rows.length === 0) {
-      return res.status(400).json({ error: 'Material não pertence à obra selecionada' })
-    }
-
-    const query = `
-      INSERT INTO movimentacaomaterial (materialid, tipo, quantidade, valorunitario, datamovimentacao)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING
-        id,
-        materialid AS material_id,
+    // 3️⃣ cria movimentação
+    const mov = await client.query(
+      `INSERT INTO movimentacaomaterial
+      (materialid, tipo, quantidade, valorunitario, datamovimentacao)
+      VALUES ($1,$2,$3,$4,$5)
+      RETURNING *`,
+      [
+        materialId,
         tipo,
         quantidade,
-        valorunitario AS valor_unitario,
-        datamovimentacao AS data_movimentacao
-    `
-    const result = await db.query(query, [
-      material_id,
-      tipo,
-      parseFloat(quantidade),
-      valor_unitario != null ? parseFloat(valor_unitario) : 0,
-      data_movimentacao
-    ])
+        valor_unitario || 0,
+        data_movimentacao
+      ]
+    )
 
-    const row = result.rows[0]
+    await client.query('COMMIT')
 
     res.status(201).json({
       success: true,
-      data: {
-        id: row.id,
-        material_id: row.material_id,
-        obra_id: Number(obra_id),
-        tipo: row.tipo,
-        quantidade: parseFloat(row.quantidade),
-        valor_unitario: parseFloat(row.valor_unitario),
-        data_movimentacao: row.data_movimentacao
-      }
+      data: mov.rows[0]
     })
-  } catch (error) {
-    console.error('Erro ao criar movimentação:', error)
-    res.status(500).json({ error: 'Erro ao criar movimentação' })
+
+  } catch (err) {
+
+    await client.query('ROLLBACK')
+    console.error(err)
+
+    res.status(500).json({
+      error: 'Erro ao criar movimentação'
+    })
+
+  } finally {
+    client.release()
   }
 }

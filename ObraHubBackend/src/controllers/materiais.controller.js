@@ -97,7 +97,7 @@ exports.create = async (req, res) => {
       await db.query(
         `
           INSERT INTO movimentacaomaterial (materialid, tipo, quantidade, valorunitario, datamovimentacao)
-          VALUES ($1, 'Entrada', $2, 0, $3)
+          VALUES ($1, 'entrada', $2, 0, $3)
         `,
         [m.id, qtdInicial, hoje]
       )
@@ -130,7 +130,7 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const { id } = req.params
-    const { nome, unidade } = req.body
+    const { nome, unidade, estoque_atual } = req.body
     const empresaId = req.user.empresaid
 
     const check = await db.query(
