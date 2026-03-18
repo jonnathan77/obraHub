@@ -6,9 +6,18 @@
     </button>
   </div>
 
-  <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+  <div
+    *ngIf="error"
+    class="alert alert-danger alert-dismissible fade show"
+    role="alert"
+  >
     {{ error }}
-    <button type="button" class="btn-close" (click)="error = null" aria-label="Fechar"></button>
+    <button
+      type="button"
+      class="btn-close"
+      (click)="error = null"
+      aria-label="Fechar"
+    ></button>
   </div>
 
   <!-- Seleção de Obra -->
@@ -18,7 +27,8 @@
       <select
         class="form-select"
         [(ngModel)]="obraSelecionadaId"
-        (ngModelChange)="onObraChange($event)">
+        (ngModelChange)="onObraChange($event)"
+      >
         <option value="">Selecione uma obra...</option>
         <option *ngFor="let o of obras" [value]="o.id">{{ o.name }}</option>
       </select>
@@ -46,27 +56,50 @@
             <th class="text-end">Valor unitário</th>
             <th class="text-end">Valor total</th>
             <th>Data</th>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let m of movimentacoes">
             <td>
-              <span class="badge" [class.bg-success]="m.tipo === 'entrada'" [class.bg-danger]="m.tipo === 'saida'">
-                {{ m.tipo === 'entrada' ? 'Entrada' : 'Saída' }}
+              <span
+                class="badge"
+                [class.bg-success]="m.tipo === 'entrada'"
+                [class.bg-danger]="m.tipo === 'saida'"
+              >
+                {{ m.tipo === "entrada" ? "Entrada" : "Saída" }}
               </span>
             </td>
             <td>{{ m.material_nome || m.material_id }}</td>
             <td>{{ m.obra_nome || m.obra_id }}</td>
-            <td>{{ m.quantidade | number:'1.2-2' }}</td>
-            <td class="text-end">R$ {{ (m.valor_unitario || 0) | number:'1.2-2' }}</td>
-            <td class="text-end fw-bold">R$ {{ valorTotal(m) | number:'1.2-2' }}</td>
+            <td>{{ m.quantidade | number: "1.2-2" }}</td>
+            <td class="text-end">
+              R$ {{ m.valor_unitario || 0 | number: "1.2-2" }}
+            </td>
+            <td class="text-end fw-bold">
+              R$ {{ valorTotal(m) | number: "1.2-2" }}
+            </td>
             <td>{{ formatarData(m.data_movimentacao) }}</td>
+            <td>
+              <button
+                class="btn btn-sm btn-outline-primary me-1"
+                title="Editar"
+              >
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" title="Excluir">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
           </tr>
         </tbody>
       </table>
     </div>
-    <div *ngIf="movimentacoes.length === 0" class="card-body text-center text-muted py-5">
-      <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+    <div
+      *ngIf="movimentacoes.length === 0"
+      class="card-body text-center text-muted py-5"
+    >
+      <i class="bi bi-inbox" style="font-size: 3rem"></i>
       <p class="mt-3">Nenhuma movimentação registrada</p>
       <button class="btn btn-primary" (click)="abrirNovo()">
         <i class="bi bi-plus-circle"></i> Nova Movimentação
@@ -80,20 +113,50 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">Nova Movimentação</h5>
-          <button type="button" class="btn-close" (click)="fecharModal()" aria-label="Fechar"></button>
+          <button
+            type="button"
+            class="btn-close"
+            (click)="fecharModal()"
+            aria-label="Fechar"
+          ></button>
         </div>
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label">Material</label>
-            <select class="form-select" [(ngModel)]="form.material_id" required>
-              <option [value]="0">Selecione...</option>
-              <option *ngFor="let mat of materiais" [value]="mat.id">{{ mat.nome }} ({{ mat.unidade }})</option>
+            <div class="mb-3">
+              <label class="form-label">Material</label>
+              <input
+                type="text"
+                class="form-control"
+                [(ngModel)]="form.material_nome"
+                placeholder="Ex: Cimento, Areia, Tijolo"
+                required
+              />
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Unidade</label>
+            <select class="form-select" [(ngModel)]="form.unidade">
+              <option value="un">Unidade</option>
+              <option value="kg">Kg</option>
+              <option value="m²">m²</option>
+              <option value="m³">m³</option>
+              <option value="L">Litro</option>
+              <option value="sc">Saco</option>
+              <option value="cx">Caixa</option>
             </select>
           </div>
           <div class="mb-3">
             <label class="form-label">Obra</label>
-            <select class="form-select" [(ngModel)]="form.obra_id" required disabled>
-              <option *ngFor="let o of obras" [value]="o.id">{{ o.name }}</option>
+            <select
+              class="form-select"
+              [(ngModel)]="form.obra_id"
+              required
+              disabled
+            >
+              <option *ngFor="let o of obras" [value]="o.id">
+                {{ o.name }}
+              </option>
             </select>
           </div>
           <div class="mb-3">
@@ -105,22 +168,55 @@
           </div>
           <div class="mb-3">
             <label class="form-label">Quantidade</label>
-            <input type="number" class="form-control" [(ngModel)]="form.quantidade" min="0" step="0.01" required />
+            <input
+              type="number"
+              class="form-control"
+              [(ngModel)]="form.quantidade"
+              min="0"
+              step="0.01"
+              required
+            />
           </div>
           <div class="mb-3">
             <label class="form-label">Valor unitário (R$)</label>
-            <input type="number" class="form-control" [(ngModel)]="form.valor_unitario" min="0" step="0.01" />
+            <input
+              type="number"
+              class="form-control"
+              [(ngModel)]="form.valor_unitario"
+              min="0"
+              step="0.01"
+            />
           </div>
           <div class="mb-3">
             <label class="form-label">Data movimentação</label>
-            <input type="date" class="form-control" [(ngModel)]="form.data_movimentacao" required />
+            <input
+              type="date"
+              class="form-control"
+              [(ngModel)]="form.data_movimentacao"
+              required
+            />
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="fecharModal()" [disabled]="salvando">Cancelar</button>
-          <button type="button" class="btn btn-primary" (click)="salvar()" [disabled]="salvando">
-            <span *ngIf="salvando" class="spinner-border spinner-border-sm me-1"></span>
-            {{ salvando ? 'Salvando...' : 'Salvar' }}
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="fecharModal()"
+            [disabled]="salvando"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="salvar()"
+            [disabled]="salvando"
+          >
+            <span
+              *ngIf="salvando"
+              class="spinner-border spinner-border-sm me-1"
+            ></span>
+            {{ salvando ? "Salvando..." : "Salvar" }}
           </button>
         </div>
       </div>

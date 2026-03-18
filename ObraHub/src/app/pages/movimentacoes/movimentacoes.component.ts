@@ -24,7 +24,8 @@ export class MovimentacoesComponent implements OnInit {
   salvando = false;
 
   form = {
-    material_id: 0,
+    material_nome: '',
+    unidade: 'un',
     obra_id: 0,
     tipo: 'entrada' as 'entrada' | 'saida',
     quantidade: 0,
@@ -96,7 +97,8 @@ export class MovimentacoesComponent implements OnInit {
     }
 
     this.form = {
-      material_id: this.materiais[0]?.id ?? 0,
+      material_nome: '',
+      unidade: 'un',
       obra_id: Number(this.obraSelecionadaId) || 0,
       tipo: 'entrada',
       quantidade: 0,
@@ -111,7 +113,7 @@ export class MovimentacoesComponent implements OnInit {
   }
 
   salvar(): void {
-    if (!this.form.material_id || !this.form.obra_id || !this.form.quantidade || !this.form.data_movimentacao) {
+    if (!this.form.material_nome || !this.form.obra_id || !this.form.quantidade || !this.form.data_movimentacao) {
       this.error = 'Preencha todos os campos obrigatórios.';
       return;
     }
@@ -120,13 +122,14 @@ export class MovimentacoesComponent implements OnInit {
     this.error = null;
 
     this.movimentacoesService.create({
-      material_id: this.form.material_id,
-      obra_id: Number(this.form.obra_id),
-      tipo: this.form.tipo,
-      quantidade: this.form.quantidade,
-      valor_unitario: this.form.valor_unitario,
-      data_movimentacao: this.form.data_movimentacao
-    }).subscribe({
+    material_nome: this.form.material_nome,
+    unidade: this.form.unidade,
+    obra_id: Number(this.form.obra_id),
+    tipo: this.form.tipo,
+    quantidade: this.form.quantidade,
+    valor_unitario: this.form.valor_unitario,
+    data_movimentacao: this.form.data_movimentacao
+  }).subscribe({
       next: () => {
         this.salvando = false;
         this.fecharModal();

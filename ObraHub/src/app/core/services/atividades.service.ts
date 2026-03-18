@@ -10,42 +10,94 @@ const API = environment.apiUrl;
 
 @Injectable({ providedIn: 'root' })
 export class AtividadesService {
-  constructor(private http: HttpClient, private auth: AuthService) {}
+  constructor(
+    private http: HttpClient,
+    private auth: AuthService,
+  ) {}
 
   private headers() {
     const token = this.auth.getToken();
     return {
       headers: new HttpHeaders({
-        Authorization: token ? `Bearer ${token}` : ''
-      })
+        Authorization: token ? `Bearer ${token}` : '',
+      }),
     };
   }
 
   getByObraId(obraId: number): Observable<Atividade[]> {
-    return this.http.get<{ success: boolean; data: Atividade[] }>(`${API}/works/${obraId}/atividades`, this.headers()).pipe(
-      map(r => r.data || []),
-      catchError(() => of([]))
-    );
+    return this.http
+      .get<{
+        success: boolean;
+        data: Atividade[];
+      }>(`${API}/works/${obraId}/atividades`, this.headers())
+      .pipe(
+        map((r) => r.data || []),
+        catchError(() => of([])),
+      );
   }
 
-  create(obraId: number, payload: { etapa: string; descricao: string; responsavel?: string; estrutura_obra_id?: number }): Observable<Atividade | null> {
-    return this.http.post<{ success: boolean; data: Atividade }>(`${API}/works/${obraId}/atividades`, payload, this.headers()).pipe(
-      map(r => r.data || null),
-      catchError(() => of(null))
-    );
+  create(
+    obraId: number,
+    payload: {
+      etapa: string;
+      descricao: string;
+      responsavel?: string;
+      estrutura_obra_id?: number;
+    },
+  ): Observable<Atividade | null> {
+    return this.http
+      .post<{
+        success: boolean;
+        data: Atividade;
+      }>(`${API}/works/${obraId}/atividades`, payload, this.headers())
+      .pipe(
+        map((r) => r.data || null),
+        catchError(() => of(null)),
+      );
   }
 
-  update(id: number, payload: Partial<Atividade>): Observable<Atividade | null> {
-    return this.http.put<{ success: boolean; data: Atividade }>(`${API}/atividades/${id}`, payload, this.headers()).pipe(
-      map(r => r.data || null),
-      catchError(() => of(null))
-    );
+  update(
+    id: number,
+    payload: Partial<Atividade>,
+  ): Observable<Atividade | null> {
+    return this.http
+      .put<{
+        success: boolean;
+        data: Atividade;
+      }>(`${API}/atividades/${id}`, payload, this.headers())
+      .pipe(
+        map((r) => r.data || null),
+        catchError(() => of(null)),
+      );
   }
 
   delete(id: number): Observable<boolean> {
-    return this.http.delete<{ success: boolean }>(`${API}/atividades/${id}`, this.headers()).pipe(
-      map(() => true),
-      catchError(() => of(false))
-    );
+    return this.http
+      .delete<{ success: boolean }>(`${API}/atividades/${id}`, this.headers())
+      .pipe(
+        map(() => true),
+        catchError(() => of(false)),
+      );
+  }
+  getChecklist(obraId: number): Observable<any> {
+    return this.http
+      .get<{
+        success: boolean;
+        data: any[];
+      }>(`${API}/works/${obraId}/checklist`, this.headers())
+      .pipe(
+        map((r) => r.data || []),
+        catchError(() => of([])),
+      );
+  }
+
+  updateStatus(payload: {
+    estrutura_id: number;
+    etapa: string;
+    status: string;
+  }): Observable<any> {
+    return this.http
+      .patch(`${API}/works/atividades/status`, payload, this.headers())
+      .pipe(catchError(() => of(null)));
   }
 }

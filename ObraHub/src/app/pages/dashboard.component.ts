@@ -64,7 +64,6 @@ export class DashboardComponent implements OnInit {
 
     this.custosService.getAll().subscribe((custos: Custo[]) => {
       this.custos = custos;
-      console.log('Custos carregados:', custos);
       this.custosTotal = this.custos.reduce((s, c) => s + (c.valor || 0), 0);
     });
   }

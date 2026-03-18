@@ -60,8 +60,6 @@ export class DetalheObraComponent implements OnInit {
     this.obrasService.getById(this.obraId).subscribe(obra => {
       this.obra = obra || null;
       this.loading = false;
-
-      console.log('Obra carregada:', obra);
     });
 
     this.etapasService.getByObraId(this.obraId).subscribe(etapas => {

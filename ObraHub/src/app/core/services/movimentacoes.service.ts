@@ -33,17 +33,18 @@ export class MovimentacoesService {
     );
   }
 
-  create(payload: {
-    material_id: number;
-    obra_id: number;
-    tipo: 'entrada' | 'saida';
-    quantidade: number;
-    valor_unitario?: number;
-    data_movimentacao: string;
-  }): Observable<Movimentacao | null> {
+  create(data: {
+      material_nome: string;
+      unidade: string;
+      obra_id: number;
+      tipo: 'entrada' | 'saida';
+      quantidade: number;
+      valor_unitario?: number;
+      data_movimentacao: string;
+    }): Observable<Movimentacao | null> {
     return this.http.post<{ success: boolean; data: Movimentacao }>(
       `${API}/movimentacoes`,
-      payload,
+      data,
       this.headers()
     ).pipe(
       map(r => r.data || null),

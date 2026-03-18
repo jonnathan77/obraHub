@@ -77,8 +77,6 @@ export class ListaObrasComponent implements OnInit {
   }
 
   handleCreateObra(data: any): void {
-    console.log('Dados recebidos do modal:', data);
-
     this.obrasService.create(data).subscribe(() => {
       this.modalOpen = false;
       this.carregarObras();
