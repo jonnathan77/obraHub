@@ -71,7 +71,6 @@ export class CustosService {
       map(response => {
         const rows: any[] = (response as any).data || [];
         // convert each row returned by the view into the Custo interface
-        console.log('Custos convertidos:', response, rows);
         return rows.map((r: any) => {
           return {
             // optional id if available in the view

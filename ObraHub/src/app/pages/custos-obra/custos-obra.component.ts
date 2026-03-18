@@ -1,42 +1,179 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CustosService } from '../../core/services/custos.service';
-import { Custo } from '../../core/models';
+import { Custo, Obra } from '../../core/models';
+import { NgChartsModule } from 'ng2-charts';
+import { ChartConfiguration } from 'chart.js';
+import { ObrasService } from '@core/services/obras.service';
 
 @Component({
   selector: 'app-lista-custos',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NgChartsModule],
   templateUrl: './custos-obra.component.html',
-  styleUrls: ['./custos-obra.component.scss']
+  styleUrls: ['./custos-obra.component.scss'],
 })
 export class ListaCustosComponent implements OnInit {
   @Input() obraId: string = '';
   @Input() custos: Custo[] = [];
   @Input() orcamento: number = 0;
+  obra: Obra | null = null;
 
-  constructor(private custosService: CustosService) { }
+  custosLoaded = false;
+  obraLoaded = false;
+
+  chartData: any = {
+    labels: [],
+    datasets: [
+      {
+        label: 'Orçado',
+        data: [],
+        backgroundColor: '#0d6efd',
+      },
+      {
+        label: 'Real',
+        data: [],
+        backgroundColor: '#8ec5ff',
+      },
+    ],
+  };
+
+  chartOptions: any = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      tooltip: {
+        enabled: true,
+        callbacks: {
+          label: (context: any) => {
+            return `${context.dataset.label}: R$ ${context.raw}`;
+          },
+        },
+      },
+      legend: {
+        position: 'top',
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: (value: any) => 'R$ ' + value,
+        },
+      },
+    },
+  };
+
+  constructor(
+    private custosService: CustosService,
+    private obrasService: ObrasService,
+  ) {}
 
   ngOnInit(): void {
-    if (!this.custos || this.custos.length === 0) {
-      this.carregarCustos();
-    }
+     this.carregarCustos();
+     this.carregarObra();
+  }
 
-    // If no chart data provided, set mocked values
-    this.setMockChartData();
-    this.prepareChart();
+  carregarObra(): void {
+    this.obrasService.getById(this.obraId).subscribe((obra) => {
+      this.obra = obra || null;
+      this.orcamento = obra?.orcamentoPrevisto || 0;
+
+      this.obraLoaded = true;
+      this.tryRenderChart();
+    });
   }
 
   carregarCustos(): void {
-    console.log('Carregando custos para obraId:', this.obraId);
-    // request data from backend view. if the server isn't running you'll get [] here.
-    this.custosService.getByObraId(this.obraId).subscribe(custos => {
-      console.log('custos carregados:', custos);
+    this.custosService.getByObraId(this.obraId).subscribe((custos) => {
       this.custos = custos || [];
-    }, error => {
-      console.error('Erro ao carregar custos:', error);
-      this.custos = [];
+
+      this.custosLoaded = true;
+      this.tryRenderChart();
     });
+  }
+
+  tryRenderChart() {
+   if (this.custosLoaded && this.obraLoaded) {
+    this.gerarGraficoMes();
+    }
+  }
+
+  gerarGraficoMes() {
+    const meses: any = {};
+
+    this.custos.forEach((c) => {
+      const mes = new Date(c.data).toLocaleString('pt-BR', { month: 'short' });
+
+      if (!meses[mes]) {
+        meses[mes] = 0;
+      }
+
+      meses[mes] += c.valor;
+    });
+
+    const labels = Object.keys(meses);
+    const valores = Object.values(meses);
+
+    // orçamento dividido pelos meses
+    const mediaOrcamento = this.orcamento / (labels.length || 1);
+
+    this.chartData = {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Orçado',
+          data: labels.map(() => Math.round(mediaOrcamento)),
+          backgroundColor: '#0d6efd',
+        },
+        {
+          label: 'Real',
+          data: valores,
+          backgroundColor: '#8ec5ff',
+        },
+      ],
+    };
+  }
+
+  gerarGraficoDia() {
+    const dias: any = {};
+
+    this.custos.forEach((c) => {
+      const dia = new Date(c.data).toLocaleDateString('pt-BR');
+
+      if (!dias[dia]) {
+        dias[dia] = 0;
+      }
+
+      dias[dia] += c.valor;
+    });
+
+    const labels = Object.keys(dias);
+    const valores = Object.values(dias);
+
+    this.chartData.labels = labels;
+    this.chartData.datasets[1].data = valores;
+
+    const mediaOrcamento =
+      (this.orcamento || 0) / (labels.length || 1);
+
+    this.chartData.datasets[0].data = labels.map(() =>
+      Math.round(mediaOrcamento),
+    );
+
+    this.chartData = { ...this.chartData };
+  }
+
+  alterarFiltro(event: any) {
+    const filtro = event.target.value;
+
+    if (filtro === 'mes') {
+      this.gerarGraficoMes();
+    }
+
+    if (filtro === 'dia') {
+      this.gerarGraficoDia();
+    }
   }
 
   getTotalCustos(): number {
@@ -44,18 +181,21 @@ export class ListaCustosComponent implements OnInit {
   }
 
   getRestante(): number {
-    return this.orcamento - this.getTotalCustos();
+    if (!this.obra) return 0;
+    return (this.orcamento ?? 0) - this.getTotalCustos();
   }
 
   getPercentualUsado(): number {
-    if (this.orcamento === 0) return 0;
-    return Math.round((this.getTotalCustos() / this.orcamento) * 100);
+    if (!this.orcamento) return 0;
+    return Math.round(
+      (this.getTotalCustos() / this.orcamento) * 100,
+    );
   }
 
   agruparPorCategoria(): { [key: string]: Custo[] } {
     const agrupado: { [key: string]: Custo[] } = {};
-    
-    this.custos.forEach(custo => {
+
+    this.custos.forEach((custo) => {
       if (!agrupado[custo.categoria]) {
         agrupado[custo.categoria] = [];
       }
@@ -67,7 +207,7 @@ export class ListaCustosComponent implements OnInit {
 
   getTotalPorCategoria(categoria: string): number {
     return this.custos
-      .filter(c => c.categoria === categoria)
+      .filter((c) => c.categoria === categoria)
       .reduce((sum, c) => sum + c.valor, 0);
   }
 
@@ -88,9 +228,9 @@ export class ListaCustosComponent implements OnInit {
   maxChartValue = 1;
 
   private setMockChartData(): void {
-    this.chartLabels = ['Jan','Fev','Mar','Abr','Mai','Jun'];
+    this.chartLabels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'];
     this.chartBudget = [38000, 45000, 52000, 60000, 54000, 70000];
-    this.chartReal =   [36000, 43000, 50000, 62000, 53000, 69000];
+    this.chartReal = [36000, 43000, 50000, 62000, 53000, 69000];
   }
 
   prepareChart(): void {
@@ -98,23 +238,37 @@ export class ListaCustosComponent implements OnInit {
     const n = this.chartLabels.length || 1;
     this.barGroupWidth = Math.floor(this.chartWidth / n);
     this.barWidth = Math.min(40, Math.floor((this.barGroupWidth - 8) / 2));
-    this.barPadding = Math.max(6, Math.floor((this.barGroupWidth - (this.barWidth*2 + 6)) / 2));
+    this.barPadding = Math.max(
+      6,
+      Math.floor((this.barGroupWidth - (this.barWidth * 2 + 6)) / 2),
+    );
 
-    const maxVal = Math.max.apply(null, this.chartBudget.concat(this.chartReal)) || 1;
+    const maxVal =
+      Math.max.apply(null, this.chartBudget.concat(this.chartReal)) || 1;
     this.maxChartValue = maxVal;
     const scale = this.chartHeight / maxVal;
 
-    this.budgetHeights = this.chartBudget.map(v => Math.round(v * scale));
-    this.realHeights = this.chartReal.map(v => Math.round(v * scale));
+    this.budgetHeights = this.chartBudget.map((v) => Math.round(v * scale));
+    this.realHeights = this.chartReal.map((v) => Math.round(v * scale));
 
     // grid 5 lines
     const gridCount = 5;
-    this.yGrid = Array.from({length: gridCount}, (_, i) => i);
+    this.yGrid = Array.from({ length: gridCount }, (_, i) => i);
   }
 
   // KPI helpers
-  getTotalBudgetChart(): number { return this.chartBudget.reduce((s,v)=>s+v,0); }
-  getTotalRealChart(): number { return this.chartReal.reduce((s,v)=>s+v,0); }
-  getPercentualChart(): number { const b=this.getTotalBudgetChart(); return b? Math.round(this.getTotalRealChart()/b*100):0; }
-  getLastMonthDelta(): number { const i=this.chartLabels.length-1; return (this.chartReal[i]||0) - (this.chartBudget[i]||0); }
+  getTotalBudgetChart(): number {
+    return this.chartBudget.reduce((s, v) => s + v, 0);
+  }
+  getTotalRealChart(): number {
+    return this.chartReal.reduce((s, v) => s + v, 0);
+  }
+  getPercentualChart(): number {
+    const b = this.getTotalBudgetChart();
+    return b ? Math.round((this.getTotalRealChart() / b) * 100) : 0;
+  }
+  getLastMonthDelta(): number {
+    const i = this.chartLabels.length - 1;
+    return (this.chartReal[i] || 0) - (this.chartBudget[i] || 0);
+  }
 }

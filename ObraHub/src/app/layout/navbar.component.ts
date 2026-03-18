@@ -9,11 +9,11 @@ import { AuthService } from '../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './navbar.component.html',
-  styleUrls: ['./navbar.component.scss']
+  styleUrls: ['./navbar.component.scss'],
 })
 export class NavbarComponent implements OnInit {
   appTitle = 'ObraHub';
-  
+
   // modal e usuario
   showProfileModal = false;
   usuario: any = null;
@@ -22,11 +22,22 @@ export class NavbarComponent implements OnInit {
   novaSenha = '';
   confirmaSenha = '';
   salvando = false;
+  nomeUsuario = '';
 
-  constructor(private layout: LayoutService, private auth: AuthService) {}
+  constructor(
+    private layout: LayoutService,
+    private auth: AuthService,
+  ) {}
 
   ngOnInit(): void {
     this.carregarUsuario();
+    const userString = localStorage.getItem('obrahub_user');
+
+    if (userString) {
+      const user = JSON.parse(userString);
+      const nome = user.nome;
+      this.nomeUsuario = nome;
+    }
   }
 
   toggleSidebar(): void {
@@ -56,7 +67,7 @@ export class NavbarComponent implements OnInit {
 
   salvarPerfilUsuario(): void {
     if (!this.usuarioEditavel) return;
-    
+
     // aqui vocÃª faria a chamada ao backend para salvar
     // por enquanto apenas atualiza localmente
     this.salvando = true;
@@ -78,7 +89,7 @@ export class NavbarComponent implements OnInit {
       alert('As senhas não conferem');
       return;
     }
-    
+
     // aqui vocÃª faria a chamada ao backend para atualizar senha
     this.salvando = true;
     setTimeout(() => {

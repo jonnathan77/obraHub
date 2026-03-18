@@ -3,14 +3,18 @@
     <button class="btn btn-outline-light d-lg-none me-2" (click)="toggleSidebar()" aria-label="Toggle menu">
       <i class="bi bi-list"></i>
     </button>
-    <a class="navbar-brand fw-bold" href="#">
+    <a class="navbar-brand fw-bold">
       <i class="bi bi-building"></i> {{ appTitle }}
     </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+    <button class="navbar-toggler d-none d-lg-block" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
+     
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
+         <li class="nav-item" style="display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+           <span style="color: white;">Olá, {{ nomeUsuario || 'Usuário' }}!</span>
+        </li>
         <li class="nav-item">
           <a class="nav-link" href="#" (click)="abrirModalPerfil(); $event.preventDefault()"><i class="bi bi-person-circle"></i> Perfil</a>
         </li>
@@ -23,15 +27,17 @@
 </nav>
 
 <!-- MODAL DE PERFIL -->
-<div *ngIf="showProfileModal" class="modal-backdrop show" style="display: block;">
-  <div class="modal show d-block" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Meu Perfil</h5>
-          <button type="button" class="btn-close" aria-label="Close" (click)="fecharModalPerfil()"></button>
-        </div>
-        <div class="modal-body" *ngIf="usuarioEditavel">
+<div *ngIf="showProfileModal" class="modal-overlay">
+
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Meu Perfil</h5>
+        <button type="button" class="btn-close" (click)="fecharModalPerfil()"></button>
+      </div>
+
+      <div class="modal-body" *ngIf="usuarioEditavel">
           <form>
             <div class="mb-3">
               <label for="nome" class="form-label">Nome</label>
@@ -86,6 +92,5 @@
           </button>
         </div>
       </div>
-    </div>
   </div>
 </div>
