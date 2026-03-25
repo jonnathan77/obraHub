@@ -1,0 +1,306 @@
+/* Estilos já criados anterior - copiando */
+.financeiro-container {
+  padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+  h1 {
+    font-size: 2.8rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+  }
+  p {
+    font-size: 1.2rem;
+    color: #6b7280;
+  }
+}
+
+.upload-section {
+  position: relative;
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  border: 3px dashed #cbd5e1;
+  border-radius: 24px;
+  padding: 4rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-bottom: 3rem;
+
+  &:hover:not(.loading) {
+    border-color: #3b82f6;
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+    transform: translateY(-4px);
+    box-shadow: 0 25px 50px -12px rgba(0, 0%, 0%, 0.25);
+  }
+
+  &.drag-over {
+    border-color: #3b82f6 !important;
+    background: linear-gradient(135deg, #bfdbfe, #93c5fd) !important;
+    transform: scale(1.02);
+  }
+
+  &.loading {
+    opacity: 0.8;
+    cursor: wait;
+  }
+
+  .upload-btn {
+    all: unset;
+    font-size: 1.4rem;
+    color: #374151;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 1.5rem;
+    border-radius: 16px;
+    background: white;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin: 0 auto;
+
+    i {
+      font-size: 2rem;
+    }
+
+    &:hover:not(:disabled) {
+      background: #3b82f6;
+      color: white;
+      transform: translateY(-2px);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .upload-hint {
+    color: #6b7280;
+    margin-top: 1rem;
+    font-size: 1rem;
+  }
+}
+
+.alert {
+  border-radius: 16px;
+  padding: 1.5rem 2rem;
+  border: none;
+  margin-bottom: 2rem;
+
+  &.alert-danger {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    color: #991b1b;
+  }
+
+  &.risco {
+    box-shadow: 0 20px 40px rgba(245, 101, 101, 0.3);
+    border: 2px solid #f87171;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 20px 40px rgba(245, 101, 101, 0.3); }
+    50% { box-shadow: 0 20px 40px rgba(245, 101, 101, 0.5); }
+  }
+}
+
+.risco-icon {
+  font-size: 3rem;
+  margin-right: 1.5rem;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.card {
+  background: linear-gradient(135deg, #ffffff, #f8fafc);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.15);
+  }
+
+  h4 {
+    color: #64748b;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .valor-xl {
+    font-size: 3.5rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+
+  &.danger {
+    border-left: 6px solid #f87171;
+    background: linear-gradient(135deg, rgba(254, 226, 226, 0.5), rgba(254, 202, 202, 0.3));
+  }
+}
+
+.text-success { color: #10b981 !important; }
+.text-danger { color: #ef4444 !important; }
+
+.summary-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+
+  &.entrada { border-left: 4px solid #10b981; }
+  &.saida { border-left: 4px solid #ef4444; }
+  &.final.negativo { border-left: 4px solid #ef4444; }
+}
+
+.summary-card i {
+  font-size: 2rem;
+  color: #6b7280;
+}
+
+.summary-card div {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.summary-card small {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.chart-section {
+  background: white;
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+  margin-bottom: 3rem;
+
+  h3 {
+    text-align: center;
+    color: #1f2937;
+    margin-bottom: 2rem;
+    font-size: 1.8rem;
+  }
+
+  .chart-wrapper {
+    height: 450px;
+    position: relative;
+  }
+}
+
+.table-section {
+  background: white;
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+
+  h3 {
+    color: #1f2937;
+    margin-bottom: 2rem;
+  }
+
+  .table {
+    font-size: 0.95rem;
+
+    th {
+      background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+      border: none;
+      padding: 1.25rem 1rem;
+      font-weight: 600;
+      color: #374151;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.85rem;
+    }
+
+    td {
+      padding: 1.25rem 1rem;
+      border-color: transparent;
+      vertical-align: middle;
+
+      &.entrada {
+        color: #10b981;
+        font-weight: 600;
+      }
+
+      &.saida {
+        color: #ef4444;
+        font-weight: 600;
+      }
+    }
+
+    .badge {
+      padding: 0.5rem 1rem;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      &.entrada { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+      &.saida { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+    }
+
+    tr:hover {
+      background: rgba(59, 130, 246, 0.05);
+    }
+  }
+}
+
+.btn-outline-primary {
+  border: 2px solid #3b82f6;
+  padding: 1rem 2.5rem;
+  font-weight: 600;
+  border-radius: 50px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #3b82f6;
+    color: white;
+    transform: translateY(-2px);
+  }
+}
+
+@media (max-width: 768px) {
+  .financeiro-container {
+    padding: 1rem;
+  }
+  
+  .cards-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .valor-xl {
+    font-size: 2.5rem !important;
+  }
+}
+

@@ -19,6 +19,7 @@ export class SidebarComponent {
     { label: 'Gestão de Obras', icon: 'bi-hammer', route: '/obras', visivel: true },
    // { label: 'Materiais', icon: 'bi-box-seam', route: '/materiais', visivel: true },
     { label: 'Movimentação de Materiais', icon: 'bi-arrow-left-right', route: '/movimentacoes', visivel: true },
+    { label: 'Financeiro', icon: 'bi bi-graph-up', route: '/financeiro', visivel: true },
     { label: 'Checklist de Atividades', icon: 'bi-check2-square', route: '/checklist-atividades', visivel: true },
     { label: 'Gestão de Leads', icon: 'bi-hammer', route: '/relatorios', visivel: false },
     { label: 'Agendamentos', icon: 'bi-hammer', route: '/relatorios', visivel: false },
