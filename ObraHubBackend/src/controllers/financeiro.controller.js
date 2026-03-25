@@ -2,6 +2,7 @@ const {
   calcularSaudeFinanceira,
   gerarAlertas
 } = require('../services/financeiro.service')
+const { processarPlanilha } = require('../services/planilha.service')
 
 /**
  * GET /obras/:id/saude
@@ -49,3 +50,32 @@ exports.alertasDashboard = async (req, res) => {
     })
   }
 }
+
+/**
+ * POST /financeiro/upload
+ * Processa planilha de caixa e retorna previsão
+ */
+exports.uploadPlanilha = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'Arquivo planilha é obrigatório'
+      });
+    }
+
+    const resultado = await processarPlanilha(req.file.buffer, req.file.mimetype);
+
+    res.json({
+      success: true,
+      data: resultado
+    });
+  } catch (error) {
+    console.error('Erro ao processar planilha:', error);
+    res.status(400).json({
+      success: false,
+      error: error.message || 'Erro ao processar planilha'
+    });
+  }
+}
+
