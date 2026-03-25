@@ -14,6 +14,7 @@ const movimentacoesRoutes = require('./routes/movimentacoes.routes')
 const estruturaRoutes = require('./routes/estrutura.routes')
 const templateAtividadesRoutes = require('./routes/template_atividades.routes')
 const atividadesRoutes = require('./routes/atividades.routes')
+const financeiroRoutes = require('./routes/financeiro.routes')
 
 const app = express()
 
@@ -33,6 +34,7 @@ app.use('/movimentacoes', movimentacoesRoutes)
 app.use('/estrutura', estruturaRoutes)
 app.use('/template-atividades', templateAtividadesRoutes)
 app.use('/atividades', atividadesRoutes)
+app.use('/api/financeiro', financeiroRoutes)
 
 app.get('/', (req, res) => {
   res.send('ObraHub API rodando 🚀')
