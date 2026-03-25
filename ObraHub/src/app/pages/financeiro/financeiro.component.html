@@ -1,0 +1,197 @@
+<div class="financeiro-container">
+  <div class="header">
+    <h1>💰 Financeiro / Previsão de Caixa</h1>
+    <p>Faça upload da sua planilha para análise automática e projeções confiáveis</p>
+  </div>
+
+  <!-- Upload Area -->
+  <div class="upload-section" 
+       cdkDropList
+       [class.drag-over]="dragOver"
+       [class.loading]="loading"
+       (dragover)="onDragOver($event)"
+       (dragleave)="onDragLeave($event)"
+       (drop)="onDrop($event)">
+    <input type="file" #fileInput (change)="onFileSelected($event)" accept=".xlsx,.xls,.csv" hidden>
+    <button class="upload-btn" (click)="fileInput.click()" [disabled]="loading">
+      <i class="fas fa-cloud-upload-alt fa-2x"></i>
+      <div>
+        {{ loading ? '🔄 Processando planilha...' : 'Clique ou arraste XLSX/CSV' }}
+        <small *ngIf="fileName && !loading">{{ fileName }}</small>
+      </div>
+    </button>
+    <p *ngIf="!loading" class="upload-hint">📋 Suporta R$ 1.000,00 • DD/MM/YYYY • Excel serial</p>
+  </div>
+
+  <!-- Erro -->
+  <div *ngIf="erro" class="alert alert-danger shadow-lg mb-4">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    {{ erro }}
+    <button class="btn-close float-end" (click)="erro = ''"></button>
+  </div>
+
+  <!-- Resultados -->
+  <div *ngIf="resultado" class="resultados">
+    <!-- Cards Projeção com animação -->
+    <div class="cards-grid animate__animated animate__fadeInUp">
+      <div class="card position-relative overflow-hidden" [class.danger]="getSaldoAtual() < 0">
+        <div class="card-icon bg-success">
+          <i class="fas fa-wallet"></i>
+        </div>
+        <h4>Hoje</h4>
+        <div class="valor-xl" [class]="getCorSaldo(getSaldoAtual())">{{ formatCurrency(getSaldoAtual()) }}</div>
+      </div>
+      <div class="card position-relative overflow-hidden" [class.danger]="getSaldo7() < 0">
+        <div class="card-icon bg-primary">
+          <i class="fas fa-calendar-day"></i>
+        </div>
+        <h4>+7 dias</h4>
+        <div class="valor-xl" [class]="getCorSaldo(getSaldo7())">{{ formatCurrency(getSaldo7()) }}</div>
+      </div>
+      <div class="card position-relative overflow-hidden" [class.danger]="getSaldo15() < 0">
+        <div class="card-icon bg-warning">
+          <i class="fas fa-calendar-week"></i>
+        </div>
+        <h4>+15 dias</h4>
+        <div class="valor-xl" [class]="getCorSaldo(getSaldo15())">{{ formatCurrency(getSaldo15()) }}</div>
+      </div>
+      <div class="card position-relative overflow-hidden" [class.danger]="getSaldo30() < 0">
+        <div class="card-icon bg-info">
+          <i class="fas fa-calendar-alt"></i>
+        </div>
+        <h4>+30 dias</h4>
+        <div class="valor-xl" [class]="getCorSaldo(getSaldo30())">{{ formatCurrency(getSaldo30()) }}</div>
+      </div>
+    </div>
+
+    <!-- Risco Alert -->
+    <div *ngIf="resultado.riscoData" class="alert alert-danger risco mb-5 shadow-xl">
+      <div class="row align-items-center">
+        <div class="col-auto">
+          <div class="risco-badge">
+            🚨 RISCO
+          </div>
+        </div>
+        <div class="col">
+          <h3 class="mb-1">Caixa ficará negativo!</h3>
+          <p class="mb-0">Data prevista: <strong>{{ resultado.riscoData }}</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Kpis -->
+    <div class="row mb-5 g-3">
+      <div class="col-lg-3 col-md-6">
+        <div class="kpi-card entrada">
+          <div class="kpi-icon">
+            <i class="fas fa-plus-circle"></i>
+          </div>
+          <div class="kpi-value">{{ formatCurrency(resultado.summary.totalEntradas) }}</div>
+          <div class="kpi-label">Entradas Totais</div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6">
+        <div class="kpi-card saida">
+          <div class="kpi-icon">
+            <i class="fas fa-minus-circle"></i>
+          </div>
+          <div class="kpi-value">{{ formatCurrency(resultado.summary.totalSaidas) }}</div>
+          <div class="kpi-label">Saídas Totais</div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6">
+        <div class="kpi-card neutral">
+          <div class="kpi-icon">
+            <i class="fas fa-file-spreadsheet"></i>
+          </div>
+          <div class="kpi-value">{{ resultado.summary.linhasProcessadas | number }}</div>
+          <div class="kpi-label">Linhas Processadas</div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6">
+        <div class="kpi-card" [class.negativo]="resultado.summary.saldoFinal < 0">
+          <div class="kpi-icon">
+            <i class="fas fa-balance-scale"></i>
+          </div>
+          <div class="kpi-value">{{ formatCurrency(resultado.summary.saldoFinal) }}</div>
+          <div class="kpi-label">Saldo Final</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráfico Principal -->
+    <div class="chart-section shadow-xl mb-5">
+      <div class="chart-header d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">
+          📈 Evolução do Saldo ao Longo do Tempo
+        </h3>
+        <div class="chart-legend">
+          <span class="legend-item positivo">
+            <i class="fas fa-circle me-1"></i>Positivo
+          </span>
+          <span class="legend-item negativo">
+            <i class="fas fa-circle me-1"></i>Negativo
+          </span>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas #lineCanvas baseChart
+          [data]="lineChartData"
+          [options]="lineChartOptions"
+          [type]="'line'">
+        </canvas>
+      </div>
+    </div>
+
+    <!-- Tabela Responsiva -->
+    <div class="table-section shadow-xl">
+      <div class="table-header d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">
+          📋 Detalhamento Completo
+          <span class="badge bg-secondary ms-2">{{ resultado.fluxo.length }} registros</span>
+        </h3>
+        <button class="btn btn-outline-secondary btn-sm" (click)="exportToCSV()">
+          <i class="fas fa-download me-1"></i>Exportar CSV
+        </button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th scope="col" class="text-nowrap">Data</th>
+              <th scope="col" class="text-nowrap">Tipo</th>
+              <th scope="col" class="text-nowrap">Valor Mov.</th>
+              <th scope="col" class="text-nowrap">Saldo Acum.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let linha of resultado.fluxo; let i = index; trackBy: trackByIndex">
+              <td>{{ linha.data }}</td>
+              <td>
+                <span class="badge fs-6 px-3 py-2" 
+                      [ngClass]="{'bg-success text-white': linha.tipo === 'entrada', 'bg-danger text-white': linha.tipo === 'saida'}">
+                  {{ linha.tipo.toUpperCase() }}
+                </span>
+              </td>
+              <td [ngClass]="{'text-success fw-semibold': linha.tipo === 'entrada', 'text-danger fw-semibold': linha.tipo === 'saida'}">
+                {{ formatCurrency(linha.valor * (linha.tipo === 'entrada' ? 1 : -1)) }}
+              </td>
+              <td [ngClass]="{'text-success fw-bold': linha.saldo >= 0, 'text-danger fw-bold': linha.saldo < 0}">
+                {{ formatCurrency(linha.saldo) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CTA Nova Análise -->
+    <div class="text-center py-5">
+      <button class="btn btn-primary btn-lg px-5" (click)="fileInput.click()">
+        <i class="fas fa-plus-circle me-2"></i>
+        Nova Análise
+      </button>
+    </div>
+  </div>
+</div>
+
