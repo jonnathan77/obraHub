@@ -50,6 +50,14 @@ export class ListaObrasComponent implements OnInit {
     return this.obras.filter((o: Obra) => o.status === this.filtroStatus);
   }
 
+  get statusStatsConcluidas(): number {
+    return this.obras.filter((o: Obra) => o.status === 'Concluida').length;
+  }
+
+  get statusStatsAtrasadas(): number {
+    return this.obras.filter((o: Obra) => o.status === 'Pausada').length;
+  }
+
   getStatusColor(status: string): string {
     const colors: { [key: string]: string } = {
       'Planejada': '#6c757d',

@@ -1,6 +1,11 @@
 <aside class="sidebar" [class.collapsed]="!(isOpen$ | async)">
   <div class="sidebar-header">
-    <h5>Menu</h5>
+    <div class="brand">
+      <div class="logo-box"><i class="bi bi-building"></i></div>
+      <div class="brand-text">
+        <strong>ObraHub</strong>
+      </div>
+    </div>
     <button class="btn-toggle d-lg-none" (click)="toggleSidebar()" title="Toggle menu">
       <i class="bi bi-x-lg"></i>
     </button>

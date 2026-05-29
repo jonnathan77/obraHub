@@ -1,201 +1,82 @@
 <div class="page-checklist">
-  <div
-    class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2"
-  >
-    <h1><i class="bi bi-check2-square"></i> Checklist de Atividades da Obra</h1>
+  <div class="title-wrap">
+    <h1>Checklists de Atividades</h1>
+    <p>Acompanhe todas as atividades da obra.</p>
   </div>
 
-  <div
-    *ngIf="error"
-    class="alert alert-danger alert-dismissible fade show"
-    role="alert"
-  >
+  <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
     {{ error }}
-    <button
-      type="button"
-      class="btn-close"
-      (click)="error = null"
-      aria-label="Fechar"
-    ></button>
+    <button type="button" class="btn-close" (click)="error = null" aria-label="Fechar"></button>
   </div>
 
-  <!-- Seleção de Obra -->
-  <div class="card mb-4 shadow-sm">
-    <div class="card-body">
-      <label class="form-label fw-semibold">Selecionar Obra</label>
-
-      <select
-        class="form-select form-select-lg"
-        [ngModel]="obraSelecionada?.id"
-        (ngModelChange)="onObraChange($event)"
-      >
-        <option value="">Selecione uma obra...</option>
-
-        <option *ngFor="let o of obras" [value]="o.id">
-          {{ o.name }}
-        </option>
-      </select>
-    </div>
-  </div>
-
-  <ng-container *ngIf="obraSelecionada">
-    <!-- Estrutura (Blocos / Aptos) -->
-    <div class="card mb-4 shadow-sm">
-      <div
-        class="card-header d-flex justify-content-between align-items-center"
-      >
-        <h5 class="mb-0">
-          <i class="bi bi-building"></i> Estrutura da Obra (Blocos e Unidades)
-        </h5>
-        <button class="btn btn-sm btn-primary" (click)="abrirNovaEstrutura()">
-          <i class="bi bi-plus-circle"></i> Nova Estrutura
-        </button>
-      </div>
-      <div class="card-body">
-        <div *ngIf="loadingEstrutura" class="text-center py-3">
-          <div class="spinner-border spinner-border-sm text-primary"></div>
-          <span class="ms-2">Carregando...</span>
-        </div>
-        <div
-          *ngIf="!loadingEstrutura && estrutura.length === 0"
-          class="text-muted text-center py-4"
-        >
-          <i class="bi bi-building" style="font-size: 2rem"></i>
-          <p class="mt-2">
-            Nenhum bloco ou unidade cadastrado. Clique em "Nova Estrutura" para
-            criar.
-          </p>
-        </div>
-        <div
-          *ngIf="!loadingEstrutura && estrutura.length > 0"
-          class="estrutura-tree"
-        >
-          <div *ngFor="let raiz of estruturaRaiz()" class="estrutura-item mb-2">
-            <div class="d-flex align-items-center gap-2">
-              <span class="badge bg-secondary">{{ raiz.tipo }}</span>
-              <strong>{{ raiz.nome }}</strong>
-              <button
-                class="btn btn-sm btn-outline-danger ms-auto"
-                (click)="excluirEstrutura(raiz)"
-                title="Excluir"
-              >
-                <i class="bi bi-trash"></i>
-              </button>
-            </div>
-            <div *ngIf="filhosDe(raiz.id).length" class="ms-4 mt-1">
-              <div
-                *ngFor="let filho of filhosDe(raiz.id)"
-                class="d-flex align-items-center gap-2 py-1"
-              >
-                <span class="badge bg-info">{{ filho.tipo }}</span>
-                <span>{{ filho.nome }}</span>
-                <button
-                  class="btn btn-sm btn-outline-danger ms-auto"
-                  (click)="excluirEstrutura(filho)"
-                  title="Excluir"
-                >
-                  <i class="bi bi-trash"></i>
-                </button>
-              </div>
-            </div>
-          </div>
+  <section class="checklist-card">
+    <div class="card-head">
+      <div>
+        <h2>Checklists de Atividades</h2>
+        <div class="obra-select-wrap">
+          <label>Obra:</label>
+          <select [ngModel]="obraSelecionada?.id" (ngModelChange)="onObraChange($event)">
+            <option value="">Selecione uma obra...</option>
+            <option *ngFor="let o of obras" [value]="o.id">{{ o.name }}</option>
+          </select>
         </div>
       </div>
+      <button class="btn-new" (click)="abrirNovaAtividade()">
+        <i class="bi bi-plus-lg"></i> Novo Checklist
+      </button>
     </div>
 
-    <!-- Checklist por Etapa -->
-    <div class="card shadow-sm">
-      <div
-        class="card-header d-flex justify-content-between align-items-center"
-      >
-        <h5 class="mb-0">
-          <i class="bi bi-list-check"></i> Atividades por Etapa
-        </h5>
-        <button class="btn btn-sm btn-primary" (click)="abrirNovaAtividade()">
-          <i class="bi bi-plus-circle"></i> Nova Atividade
-        </button>
-      </div>
-      <div class="card-body">
-        <div *ngIf="loading" class="text-center py-5">
-          <div class="spinner-border text-primary" role="status"></div>
-          <p class="mt-2 text-muted">Carregando atividades...</p>
-        </div>
+    <div class="tabs-status">
+      <button [class.active]="filtroStatusChecklist === 'pendente'" (click)="setFiltroChecklist('pendente')">Pendentes ({{ totalPendentes }})</button>
+      <button [class.active]="filtroStatusChecklist === 'em_andamento'" (click)="setFiltroChecklist('em_andamento')">Em Andamento ({{ totalEmAndamento }})</button>
+      <button [class.active]="filtroStatusChecklist === 'concluido'" (click)="setFiltroChecklist('concluido')">Concluídos ({{ totalConcluidos }})</button>
+      <button [class.active]="filtroStatusChecklist === 'todos'" (click)="setFiltroChecklist('todos')">Todos ({{ atividades.length }})</button>
+    </div>
 
-        <div
-          *ngIf="!loading && atividades.length === 0"
-          class="text-muted text-center py-5"
-        >
-          <i class="bi bi-check2-square" style="font-size: 3rem"></i>
-          <p class="mt-3">
-            Nenhuma atividade cadastrada. Clique em "Nova Atividade" para
-            começar.
-          </p>
-        </div>
+    <div *ngIf="loading" class="text-center py-5">
+      <div class="spinner-border text-primary"></div>
+      <p class="mt-2 text-muted">Carregando atividades...</p>
+    </div>
 
-        <div *ngIf="!loading && atividades.length > 0" class="checklist-grupos">
-          <div
-            *ngFor="let grupo of atividadesPorEtapa()"
-            class="grupo-etapa mb-4"
-          >
-            <h6 class="text-primary border-bottom pb-2 mb-3">
-              {{ grupo.etapa }}
-            </h6>
-            <div class="lista-atividades">
-              <div
-                *ngFor="let a of grupo.items"
-                class="atividade-item d-flex align-items-center gap-2 py-2 border-bottom"
-              >
-                <button
-                  type="button"
-                  class="btn btn-check"
-                  [class.btn-success]="isConcluido(a)"
-                  [class.btn-outline-secondary]="!isConcluido(a)"
-                  (click)="marcarConcluido(a)"
-                  [title]="isConcluido(a) ? 'Desmarcar' : 'Marcar concluído'"
-                >
-                  <i
-                    class="bi"
-                    [class.bi-check-lg]="isConcluido(a)"
-                    [class.bi-circle]="!isConcluido(a)"
-                  ></i>
-                </button>
-                <span
-                  [class.text-decoration-line-through]="isConcluido(a)"
-                  [class.text-muted]="isConcluido(a)"
-                >
-                  {{ a.descricao }}
-                </span>
-                <span
-                  *ngIf="a.responsavel"
-                  class="badge bg-light text-dark ms-2"
-                  >{{ a.responsavel }}</span
-                >
-                <span *ngIf="a.data_conclusao" class="text-success small ms-2">
-                  Concluído em {{ a.data_conclusao | date: "dd/MM/yyyy" }}
-                </span>
-                <div class="ms-auto">
-                  <button
-                    class="btn btn-sm btn-outline-primary me-1"
-                    (click)="abrirEditarAtividade(a)"
-                    title="Editar"
-                  >
-                    <i class="bi bi-pencil"></i>
-                  </button>
-                  <button
-                    class="btn btn-sm btn-outline-danger"
-                    (click)="excluirAtividade(a)"
-                    title="Excluir"
-                  >
-                    <i class="bi bi-trash"></i>
-                  </button>
+    <div class="table-wrap" *ngIf="!loading">
+      <table>
+        <thead>
+          <tr>
+            <th>Atividade</th>
+            <th>Progresso</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of atividadesFiltradasChecklist">
+            <td class="atividade-name">{{ item.etapa || 'Etapa' }} - {{ item.descricao }}</td>
+            <td>
+              <div class="progresso-cell">
+                <span>{{ progressoAtividade(item) }}%</span>
+                <div class="progress-line">
+                  <div class="progress-fill" [style.width.%]="progressoAtividade(item)" [ngClass]="getProgressClass(item)"></div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </div>
+            </td>
+            <td>
+              <span class="status-pill" [ngClass]="getStatusClass(item)">{{ getStatusLabel(item) }}</span>
+            </td>
+            <td>
+              <div class="acoes">
+                <button class="btn-icon-action" (click)="marcarConcluido(item)" title="Alterar status"><i class="bi bi-check2"></i></button>
+                <button class="btn-icon-action" (click)="abrirEditarAtividade(item)" title="Editar"><i class="bi bi-pencil"></i></button>
+                <button class="btn-icon-action danger" (click)="excluirAtividade(item)" title="Excluir"><i class="bi bi-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="atividadesFiltradasChecklist.length === 0">
+            <td colspan="4" class="empty-row">Nenhuma atividade encontrada para esse filtro.</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-  </ng-container>
+  </section>
 
   <!-- Modal Nova/Editar Atividade -->
   <div
@@ -356,29 +237,4 @@
     </div>
   </div>
 
-  <div class="obra-grid">
-    <div class="unidade-card" *ngFor="let u of checklistUnidades">
-      <div class="header">
-        <i class="bi bi-building"></i>
-        <strong>{{ u.unidade }}</strong>
-      </div>
-
-      <div class="etapas">
-        <div
-          class="etapa-item"
-          *ngFor="let e of u.etapas"
-          (click)="alterarStatus(u.estrutura_id, e)"
-        >
-          <i class="bi bi-person" *ngIf="e.status != 'concluido'"></i>
-
-          <i
-            class="bi bi-person-check text-success"
-            *ngIf="e.status == 'concluido'"
-          ></i>
-
-          {{ e.etapa }}
-        </div>
-      </div>
-    </div>
-  </div>
 </div>

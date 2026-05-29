@@ -154,4 +154,20 @@ export class MovimentacoesComponent implements OnInit {
       return '-';
     }
   }
+
+  get totalEntradasValor(): number {
+    return this.movimentacoes
+      .filter((m) => m.tipo === 'entrada')
+      .reduce((sum, m) => sum + this.valorTotal(m), 0);
+  }
+
+  get totalSaidasValor(): number {
+    return this.movimentacoes
+      .filter((m) => m.tipo === 'saida')
+      .reduce((sum, m) => sum + this.valorTotal(m), 0);
+  }
+
+  get saldoTotalValor(): number {
+    return this.totalEntradasValor - this.totalSaidasValor;
+  }
 }

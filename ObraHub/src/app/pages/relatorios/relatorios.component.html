@@ -1,59 +1,117 @@
-<div class="card p-4">
-  <h4>Gerar Relatório</h4>
-  <form [formGroup]="form" (ngSubmit)="gerar()">
-    <div class="row">
-      <div class="col-md-6 mb-3">
-        <label class="form-label">Selecione a Obra</label>
-        <select class="form-select" formControlName="obraId">
-          <option value="">-- selecione --</option>
-          <option *ngFor="let o of obras" [value]="o.id">{{ o.name }}</option>
-        </select>
-      </div>
+<div class="relatorios-container">
+  <div class="page-header">
+    <div>
+      <h1>Relatórios</h1>
+      <p>Crie relatórios profissionais com seleção de conteúdo e visualização aprimorada.</p>
+    </div>
+  </div>
+
+  <div class="report-card">
+    <h4>Configuração do Relatório</h4>
+
+    <div class="report-type-group">
+      <button
+        type="button"
+        class="type-chip"
+        [class.active]="reportType === 'fisico-financeiro'"
+        (click)="selecionarTipo('fisico-financeiro')">
+        Andamento Físico-Financeiro
+      </button>
+      <button
+        type="button"
+        class="type-chip"
+        [class.active]="reportType === 'previsao-ia'"
+        (click)="selecionarTipo('previsao-ia')">
+        Previsão com IA
+      </button>
+      <button
+        type="button"
+        class="type-chip"
+        [class.active]="reportType === 'completo'"
+        (click)="selecionarTipo('completo')">
+        Relatório Completo
+      </button>
     </div>
 
-    <div class="mb-3">
-      <label class="form-label">Dados a incluir</label>
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" formControlName="andamento" id="andamento" />
-        <label class="form-check-label" for="andamento">Andamento da Obra</label>
-      </div>
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" formControlName="financeiro" id="financeiro" />
-        <label class="form-check-label" for="financeiro">Relatório Financeiro</label>
-      </div>
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" formControlName="problemas" id="problemas" />
-        <label class="form-check-label" for="problemas">Relatório de Problemas</label>
-      </div>
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" formControlName="qualidade" id="qualidade" />
-        <label class="form-check-label" for="qualidade">Relatório de Qualidade</label>
-      </div>
-    </div>
+    <form [formGroup]="form" (ngSubmit)="gerar()">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Selecione a Obra</label>
+          <select class="form-select" formControlName="obraId">
+            <option value="">-- selecione --</option>
+            <option *ngFor="let o of obras" [value]="o.id">{{ o.name }}</option>
+          </select>
+        </div>
 
-    <div class="row align-items-center">
-      <div class="col-md-4 mb-3">
-        <label class="form-label">Formato de Saída</label>
-        <div>
-          <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" formControlName="formato" value="pdf" id="fmtPdf" />
-            <label class="form-check-label" for="fmtPdf">PDF</label>
-          </div>
-          <div class="form-check form-check-inline">
-            <input class="form-check-input" type="radio" formControlName="formato" value="excel" id="fmtExcel" />
-            <label class="form-check-label" for="fmtExcel">Excel</label>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Formato de Saída</label>
+          <div class="d-flex gap-3 flex-wrap">
+            <label class="radio-pill">
+              <input type="radio" formControlName="formato" value="pdf" />
+              PDF
+            </label>
+            <label class="radio-pill">
+              <input type="radio" formControlName="formato" value="excel" />
+              Excel
+            </label>
           </div>
         </div>
       </div>
 
-      <div class="col-md-4 mb-3">
-        <label class="form-label">E-mail para envio (opcional)</label>
-        <input class="form-control" formControlName="email" placeholder="contato@empresa.com" />
+      <div class="mb-3">
+        <label class="form-label">Seções Inclusas</label>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" formControlName="andamento" id="andamento" />
+          <label class="form-check-label" for="andamento">Andamento da Obra</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" formControlName="financeiro" id="financeiro" />
+          <label class="form-check-label" for="financeiro">Relatório Financeiro</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" formControlName="problemas" id="problemas" />
+          <label class="form-check-label" for="problemas">Relatório de Problemas</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" formControlName="qualidade" id="qualidade" />
+          <label class="form-check-label" for="qualidade">Relatório de Qualidade</label>
+        </div>
       </div>
 
-      <div class="col-md-4 mb-3 text-end">
-        <button class="btn btn-primary mt-2" type="submit">Gerar Relatório</button>
+      <div class="row align-items-center">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">E-mail para envio (opcional)</label>
+          <input class="form-control" formControlName="email" placeholder="contato@empresa.com" />
+        </div>
+        <div class="col-md-6 mb-3 text-end">
+          <button class="btn btn-primary btn-lg" type="submit" [disabled]="loadingReport">
+            {{ loadingReport ? 'Gerando relatório...' : 'Gerar Relatório' }}
+          </button>
+        </div>
+      </div>
+    </form>
+
+    <div *ngIf="reportError" class="alert alert-danger mt-3">
+      {{ reportError }}
+    </div>
+
+    <div class="preview-panel mt-4" *ngIf="obraSelecionada">
+      <div class="preview-item">
+        <span>Obra</span>
+        <strong>{{ obraSelecionada.name }}</strong>
+      </div>
+      <div class="preview-item">
+        <span>Status</span>
+        <strong>{{ obraSelecionada.status }}</strong>
+      </div>
+      <div class="preview-item">
+        <span>Orçamento</span>
+        <strong>R$ {{ (obraSelecionada.orcamentoPrevisto ?? obraSelecionada.orcamentoTotal ?? 0) | number:'1.2-2' }}</strong>
+      </div>
+      <div class="preview-item">
+        <span>Progresso</span>
+        <strong>{{ obraSelecionada.progresso ?? 0 }}%</strong>
       </div>
     </div>
-  </form>
+  </div>
 </div>

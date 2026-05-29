@@ -1,126 +1,192 @@
 <div class="dashboard-container">
-  <div class="dashboard-header">
-    <h1><i class="bi bi-graph-up"></i> Dashboard</h1>
-  </div>
-
-  <!-- Cards de Estatísticas -->
-  <div class="row mb-4">
-    <div class="col-md-3 mb-3">
-      <div class="stat-card">
-        <div class="stat-icon bg-primary">
-          <i class="bi bi-hammer"></i>
-        </div>
-        <div class="stat-content">
-          <h6>Obras Ativas</h6>
-          <h2>{{ obrasAtivas }}</h2>
-        </div>
-      </div>
+  <div class="topbar">
+    <div class="welcome">
+      <h1>Olá, {{ nomeUsuario || 'Usuário' }} 👋</h1>
+      <p>Aqui está o resumo das suas obras hoje</p>
     </div>
 
-    <div class="col-md-3 mb-3">
-      <div class="stat-card">
-        <div class="stat-icon bg-warning">
-          <i class="bi bi-exclamation-circle"></i>
-        </div>
-        <div class="stat-content">
-          <h6>Obras Atrasadas</h6>
-          <h2>{{ obrasAtrasadas }}</h2>
-        </div>
+    <div class="top-actions">
+      <div class="dropdown-wrap">
+      <button class="btn-outline-dashboard" (click)="toggleObrasDropdown()">
+        <i class="bi bi-building"></i>
+        {{ obraSelecionada }}
+        <i class="bi bi-chevron-down"></i>
+      </button>
+      <div class="dropdown-menu-obra" *ngIf="obrasDropdownOpen">
+        <button *ngFor="let obra of obrasDisponiveis" (click)="selecionarObra(obra)">{{ obra.name }}</button>
       </div>
-    </div>
-
-    <div class="col-md-3 mb-3">
-      <div class="stat-card">
-        <div class="stat-icon bg-info">
-          <i class="bi bi-percent"></i>
-        </div>
-        <div class="stat-content">
-          <h6>Progresso Médio</h6>
-          <h2>{{ progressoMedio }}%</h2>
-        </div>
       </div>
-    </div>
-
-    <div class="col-md-3 mb-3">
-      <div class="stat-card">
-        <div class="stat-icon bg-success">
-          <i class="bi bi-cash-coin"></i>
-        </div>
-        <div class="stat-content">
-          <h6>Custos Totais</h6>
-          <h2>R$ {{ (custosTotal | number:'1.0-0') }}</h2>
-        </div>
-      </div>
+      <button class="btn-icon" (click)="onBotaoClick('notificacoes')">
+        <i class="bi bi-bell"></i>
+        <span class="notification-dot">3</span>
+      </button>
+      <button class="btn-primary-dashboard" (click)="openNovaObraModal()">
+        <i class="bi bi-plus-lg"></i>
+        Nova Obra
+      </button>
     </div>
   </div>
 
-  <!-- Status das Obras -->
-  <div class="row mb-4">
-    <div class="col-md-12">
-      <div class="card shadow-sm">
-        <div class="card-header bg-light">
-          <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Status das Obras</h5>
+  <section class="financial-card">
+    <div class="finance-summary">
+      <div class="finance-status">
+        <span class="label">STATUS FINANCEIRO DA OBRA</span>
+        <span style="margin-left: 10px;" class="health-badge"><i class="bi bi-check-circle-fill"></i> Saudável</span>
+        <p>
+          Sua obra utilizou {{ consumoPercentual }}% do orçamento previsto.
+          Mantendo este ritmo, existe <strong>risco de ultrapassar</strong> o valor planejado
+          em {{ resumoFinanceiro.riscoDias }} dias.
+        </p>
+      </div>
+      <div class="finance-kpis">
+        <div class="kpi">
+          <span>ORÇAMENTO TOTAL</span>
+          <strong>R$ {{ resumoFinanceiro.orcamentoTotal | number:'1.0-0' }}</strong>
         </div>
-        <div class="card-body">
-          <div class="status-grid">
-            <div class="status-item">
-              <div class="status-bar" [style.background-color]="getStatusColor('Planejada')"></div>
-              <p class="status-label">Planejada</p>
-              <p class="status-value">{{ statusStats.planejada }}</p>
+        <div class="kpi">
+          <span>GASTO ATUAL</span>
+          <strong>R$ {{ resumoFinanceiro.gastoAtual | number:'1.0-0' }}</strong>
+        </div>
+        <div class="kpi">
+          <span>PREVISÃO FINAL</span>
+          <strong>R$ {{ resumoFinanceiro.previsaoFinal | number:'1.0-0' }}</strong>
+        </div>
+        <div class="kpi">
+          <span>RESTANTE</span>
+          <strong class="green">R$ {{ resumoFinanceiro.restante | number:'1.0-0' }}</strong>
+        </div>
+      </div>
+      <div class="consumo">
+        <div class="consumo-header">
+          <span>% CONSUMIDO</span>
+          <strong>{{ consumoPercentual }}%</strong>
+        </div>
+        <div class="progress-bar-dashboard">
+          <div class="progress-fill" [style.width.%]="consumoPercentual"></div>
+        </div>
+        <span class="consumo-footer">Dentro do previsto</span>
+      </div>
+    </div>
+
+    <div class="finance-evolution">
+      <span>EVOLUÇÃO DOS GASTOS (ÚLTIMOS 30 DIAS)</span>
+      <svg viewBox="0 0 240 80" preserveAspectRatio="none">
+        <polyline [attr.points]="pontosEvolucaoGastos"></polyline>
+      </svg>
+      <p>Total gasto no período: <strong>R$ {{ resumoFinanceiro.gastoPeriodo | number:'1.0-0' }}</strong></p>
+    </div>
+  </section>
+
+  <section class="summary-grid">
+    <article class="summary-card">
+      <div class="summary-icon blue"><i class="bi bi-box-seam"></i></div>
+      <div>
+        <h3>Materiais</h3>
+        <strong>{{ materialsCount }}</strong>
+        <p>Materiais cadastrados</p>
+        <small>{{ materiaisSaidasCount }} saídas</small>
+      </div>
+    </article>
+    <article class="summary-card">
+      <div class="summary-icon purple"><i class="bi bi-people"></i></div>
+      <div>
+        <h3>Equipe</h3>
+        <strong>{{ equipeAtiva }}</strong>
+        <p>Funcionários ativos</p>
+        <small>{{ atividadesConcluidas }} Atividades concluídas</small>
+      </div>
+    </article>
+    <article class="summary-card">
+      <div class="summary-icon orange"><i class="bi bi-clipboard-check"></i></div>
+      <div>
+        <h3>Checklists</h3>
+        <strong>{{ checklistsPendentes }}</strong>
+        <p>Pendentes</p>
+        <small>{{ checklistsConcluidos }} Concluídos</small>
+      </div>
+    </article>
+    <article class="summary-card">
+      <div class="summary-icon green"><i class="bi bi-buildings"></i></div>
+      <div>
+        <h3>Obras</h3>
+        <strong>{{ obrasEmExecucao }}</strong>
+        <p>Em execução</p>
+        <small>{{ obrasAtrasadasResumo }} Atrasada</small>
+      </div>
+    </article>
+  </section>
+
+  <section class="middle-grid">
+    <article class="box-card">
+      <div class="box-head">
+        <h2>Orçado vs Real</h2>
+        <button (click)="alterarPeriodoGrafico(periodoGrafico === '6m' ? '1a' : '6m')">
+          {{ periodoGrafico === '6m' ? 'Últimos 6 meses' : 'Último 1 ano' }} <i class="bi bi-chevron-down"></i>
+        </button>
+      </div>
+      <div class="legend">
+        <span><i class="dot dot-blue"></i> Orçado</span>
+        <span><i class="dot dot-green"></i> Real</span>
+      </div>
+      <div class="bars">
+        <div class="bar-month" *ngFor="let item of serieOrcadoVsRealExibida">
+          <div class="bar-wrap">
+            <div class="bar bar-budget" [style.height.%]="(item.orcado / 120000) * 100"></div>
+            <div class="bar bar-real" [style.height.%]="(item.real / 120000) * 100"></div>
+          </div>
+          <span>{{ item.mes }}</span>
+        </div>
+      </div>
+    </article>
+
+    <article class="box-card">
+      <div class="box-head">
+        <h2>Diário da Obra</h2>
+        <button (click)="onBotaoClick('ver_calendario')">Ver calendário</button>
+      </div>
+      <div class="timeline">
+        <div class="timeline-item" *ngFor="let item of diarioObra">
+          <div class="date-pill">
+            <strong>{{ item.dia }}</strong>
+            <span>{{ item.mes }}</span>
+          </div>
+          <div class="timeline-content">
+            <div class="line-1">
+              <h4>{{ item.titulo }}</h4>
+              <span class="event-type">{{ item.tipo }}</span>
             </div>
-            <div class="status-item">
-              <div class="status-bar" [style.background-color]="getStatusColor('Execucao')"></div>
-              <p class="status-label">Em Execução</p>
-              <p class="status-value">{{ statusStats.em_execucao }}</p>
+            <p>{{ item.descricao }}</p>
+            <small>{{ item.detalhe }}</small>
+          </div>
+          <div class="timeline-side">
+            <img *ngIf="item.imagem" [src]="item.imagem" alt="foto da obra">
+            <div class="photo-placeholder" *ngIf="!item.imagem">
+              <i class="bi bi-image"></i>
             </div>
-            <div class="status-item">
-              <div class="status-bar" [style.background-color]="getStatusColor('Pausada')"></div>
-              <p class="status-label">Pausada</p>
-              <p class="status-value">{{ statusStats.pausada }}</p>
-            </div>
-            <div class="status-item">
-              <div class="status-bar" [style.background-color]="getStatusColor('Concluida')"></div>
-              <p class="status-label">Concluída</p>
-              <p class="status-value">{{ statusStats.concluida }}</p>
-            </div>
+            <span>{{ item.hora }}</span>
           </div>
         </div>
       </div>
-    </div>
-  </div>
+      <a class="timeline-link" href="javascript:void(0)" (click)="onBotaoClick('ver_todas_atividades')">Ver todas as atividades do dia</a>
+    </article>
+  </section>
 
-  <!-- Últimas Obras -->
-  <div class="row">
-    <div class="col-md-12">
-      <div class="card shadow-sm">
-        <div class="card-header bg-light">
-          <h5 class="mb-0"><i class="bi bi-list-ul"></i> Obras Recentes</h5>
+  <section class="quick-actions">
+    <h2>Ações rápidas</h2>
+    <div class="quick-grid">
+      <button *ngFor="let acao of acoesRapidas" (click)="onAcaoRapidaClick(acao)">
+        <i class="bi" [ngClass]="acao.icone"></i>
+        <div>
+          <strong>{{ acao.titulo }}</strong>
+          <span>{{ acao.subtitulo }}</span>
         </div>
-        <div class="table-responsive">
-          <table class="table table-hover mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>Nome</th>
-                <th>Descrição</th>
-                <th>Status</th>
-                <th>Data Início</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let obra of obras | slice:0:5">
-                <td><strong>{{ obra.name }}</strong></td>
-                <td>{{ obra.descricao || '-' }}</td>
-                <td>
-                  <span class="badge" [style.background-color]="getStatusColor(obra.status)">
-                    {{ obra.status | titlecase }}
-                  </span>
-                </td>
-                <td>{{ obra.dataInicio | date:'dd/MM/yyyy' }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      </button>
     </div>
-  </div>
+  </section>
+
+  <app-create-obra
+    [isOpen]="modalNovaObraOpen"
+    (onClose)="modalNovaObraOpen = false"
+    (onCreate)="handleCreateObra($event)">
+  </app-create-obra>
 </div>

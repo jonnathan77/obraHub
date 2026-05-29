@@ -1,196 +1,250 @@
 <div class="financeiro-container">
   <div class="header">
-    <h1>💰 Financeiro / Previsão de Caixa</h1>
-    <p>Faça upload da sua planilha para análise automática e projeções confiáveis</p>
+    <h1>Financeiro</h1>
+    <p>Controle financeiro integrado com análise da obra e suporte a planilhas.</p>
   </div>
 
-  <!-- Upload Area -->
-  <div class="upload-section" 
-       cdkDropList
-       [class.drag-over]="dragOver"
-       [class.loading]="loading"
-       (dragover)="onDragOver($event)"
-       (dragleave)="onDragLeave($event)"
-       (drop)="onDrop($event)">
-    <input type="file" #fileInput (change)="onFileSelected($event)" accept=".xlsx,.xls,.csv" hidden>
-    <button class="upload-btn" (click)="fileInput.click()" [disabled]="loading">
-      <i class="fas fa-cloud-upload-alt fa-2x"></i>
-      <div>
-        {{ loading ? '🔄 Processando planilha...' : 'Clique ou arraste XLSX/CSV' }}
-        <small *ngIf="fileName && !loading">{{ fileName }}</small>
-      </div>
+  <div class="page-tabs">
+    <button
+      class="tab-button"
+      [class.active]="activeTab === 'dados'"
+      (click)="activeTab = 'dados'"
+      type="button">
+      Usar Dados da Obra
     </button>
-    <p *ngIf="!loading" class="upload-hint">📋 Suporta R$ 1.000,00 • DD/MM/YYYY • Excel serial</p>
+    <button
+      class="tab-button"
+      [class.active]="activeTab === 'planilha'"
+      (click)="activeTab = 'planilha'"
+      type="button">
+      Importar Planilha
+    </button>
   </div>
 
-  <!-- Erro -->
-  <div *ngIf="erro" class="alert alert-danger shadow-lg mb-4">
-    <i class="fas fa-exclamation-triangle me-2"></i>
-    {{ erro }}
-    <button class="btn-close float-end" (click)="erro = ''"></button>
-  </div>
-
-  <!-- Resultados -->
-  <div *ngIf="resultado" class="resultados">
-    <!-- Cards Projeção com animação -->
-    <div class="cards-grid animate__animated animate__fadeInUp">
-      <div class="card position-relative overflow-hidden" [class.danger]="getSaldoAtual() < 0">
-        <div class="card-icon bg-success">
-          <i class="fas fa-wallet"></i>
-        </div>
-        <h4>Hoje</h4>
-        <div class="valor-xl" [class]="getCorSaldo(getSaldoAtual())">{{ formatCurrency(getSaldoAtual()) }}</div>
+  <div *ngIf="activeTab === 'dados'" class="tab-panel dados-tab">
+    <div class="panel-top">
+      <div class="obra-select-box">
+        <label class="form-label">Selecione a obra</label>
+        <select
+          class="form-select"
+          [(ngModel)]="selectedObraId"
+          (change)="onObraChange(selectedObraId)"
+          [disabled]="loading || iaLoading">
+          <option value="">-- escolha uma obra --</option>
+          <option *ngFor="let obra of obras" [value]="obra.id">{{ obra.name }}</option>
+        </select>
       </div>
-      <div class="card position-relative overflow-hidden" [class.danger]="getSaldo7() < 0">
-        <div class="card-icon bg-primary">
-          <i class="fas fa-calendar-day"></i>
-        </div>
-        <h4>+7 dias</h4>
-        <div class="valor-xl" [class]="getCorSaldo(getSaldo7())">{{ formatCurrency(getSaldo7()) }}</div>
-      </div>
-      <div class="card position-relative overflow-hidden" [class.danger]="getSaldo15() < 0">
-        <div class="card-icon bg-warning">
-          <i class="fas fa-calendar-week"></i>
-        </div>
-        <h4>+15 dias</h4>
-        <div class="valor-xl" [class]="getCorSaldo(getSaldo15())">{{ formatCurrency(getSaldo15()) }}</div>
-      </div>
-      <div class="card position-relative overflow-hidden" [class.danger]="getSaldo30() < 0">
-        <div class="card-icon bg-info">
-          <i class="fas fa-calendar-alt"></i>
-        </div>
-        <h4>+30 dias</h4>
-        <div class="valor-xl" [class]="getCorSaldo(getSaldo30())">{{ formatCurrency(getSaldo30()) }}</div>
-      </div>
-    </div>
-
-    <!-- Risco Alert -->
-    <div *ngIf="resultado.riscoData" class="alert alert-danger risco mb-5 shadow-xl">
-      <div class="row align-items-center">
-        <div class="col-auto">
-          <div class="risco-badge">
-            🚨 RISCO
-          </div>
-        </div>
-        <div class="col">
-          <h3 class="mb-1">Caixa ficará negativo!</h3>
-          <p class="mb-0">Data prevista: <strong>{{ resultado.riscoData }}</strong></p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Summary Kpis -->
-    <div class="row mb-5 g-3">
-      <div class="col-lg-3 col-md-6">
-        <div class="kpi-card entrada">
-          <div class="kpi-icon">
-            <i class="fas fa-plus-circle"></i>
-          </div>
-          <div class="kpi-value">{{ formatCurrency(resultado.summary.totalEntradas) }}</div>
-          <div class="kpi-label">Entradas Totais</div>
-        </div>
-      </div>
-      <div class="col-lg-3 col-md-6">
-        <div class="kpi-card saida">
-          <div class="kpi-icon">
-            <i class="fas fa-minus-circle"></i>
-          </div>
-          <div class="kpi-value">{{ formatCurrency(resultado.summary.totalSaidas) }}</div>
-          <div class="kpi-label">Saídas Totais</div>
-        </div>
-      </div>
-      <div class="col-lg-3 col-md-6">
-        <div class="kpi-card neutral">
-          <div class="kpi-icon">
-            <i class="fas fa-file-spreadsheet"></i>
-          </div>
-          <div class="kpi-value">{{ resultado.summary.linhasProcessadas | number }}</div>
-          <div class="kpi-label">Linhas Processadas</div>
-        </div>
-      </div>
-      <div class="col-lg-3 col-md-6">
-        <div class="kpi-card" [class.negativo]="resultado.summary.saldoFinal < 0">
-          <div class="kpi-icon">
-            <i class="fas fa-balance-scale"></i>
-          </div>
-          <div class="kpi-value">{{ formatCurrency(resultado.summary.saldoFinal) }}</div>
-          <div class="kpi-label">Saldo Final</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Gráfico Principal -->
-    <div class="chart-section shadow-xl mb-5">
-      <div class="chart-header d-flex justify-content-between align-items-center mb-4">
-        <h3 class="mb-0">
-          📈 Evolução do Saldo ao Longo do Tempo
-        </h3>
-        <div class="chart-legend">
-          <span class="legend-item positivo">
-            <i class="fas fa-circle me-1"></i>Positivo
-          </span>
-          <span class="legend-item negativo">
-            <i class="fas fa-circle me-1"></i>Negativo
-          </span>
-        </div>
-      </div>
-      <div class="chart-container">
-        <canvas #lineCanvas baseChart
-          [data]="lineChartData"
-          [options]="lineChartOptions"
-          [type]="'line'">
-        </canvas>
-      </div>
-    </div>
-
-    <!-- Tabela Responsiva -->
-    <div class="table-section shadow-xl">
-      <div class="table-header d-flex justify-content-between align-items-center mb-4">
-        <h3 class="mb-0">
-          📋 Detalhamento Completo
-          <span class="badge bg-secondary ms-2">{{ resultado.fluxo.length }} registros</span>
-        </h3>
-        <button class="btn btn-outline-secondary btn-sm" (click)="exportToCSV()">
-          <i class="fas fa-download me-1"></i>Exportar CSV
-        </button>
-      </div>
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead>
-            <tr>
-              <th scope="col" class="text-nowrap">Data</th>
-              <th scope="col" class="text-nowrap">Tipo</th>
-              <th scope="col" class="text-nowrap">Valor Mov.</th>
-              <th scope="col" class="text-nowrap">Saldo Acum.</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let linha of resultado.fluxo; let i = index; trackBy: trackByIndex">
-              <td>{{ linha.data }}</td>
-              <td>
-                <span class="badge fs-6 px-3 py-2" 
-                      [ngClass]="{'bg-success text-white': linha.tipo === 'entrada', 'bg-danger text-white': linha.tipo === 'saida'}">
-                  {{ linha.tipo.toUpperCase() }}
-                </span>
-              </td>
-              <td [ngClass]="{'text-success fw-semibold': linha.tipo === 'entrada', 'text-danger fw-semibold': linha.tipo === 'saida'}">
-                {{ formatCurrency(linha.valor * (linha.tipo === 'entrada' ? 1 : -1)) }}
-              </td>
-              <td [ngClass]="{'text-success fw-bold': linha.saldo >= 0, 'text-danger fw-bold': linha.saldo < 0}">
-                {{ formatCurrency(linha.saldo) }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- CTA Nova Análise -->
-    <div class="text-center py-5">
-      <button class="btn btn-primary btn-lg px-5" (click)="fileInput.click()">
-        <i class="fas fa-plus-circle me-2"></i>
-        Nova Análise
+      <button
+        class="btn btn-primary btn-lg action-button"
+        (click)="gerarPrevisaoIa()"
+        [disabled]="!obraSelecionada || iaLoading || loading">
+        <i class="fas fa-robot me-2"></i>
+        {{ iaLoading ? 'Gerando previsão...' : 'Gerar Previsão com IA' }}
       </button>
+    </div>
+
+    <div *ngIf="!obraSelecionada" class="empty-state">
+      <div>
+        <strong>Selecione uma obra</strong> para ver o orçamento, custos e saldo disponível.
+      </div>
+    </div>
+
+    <div *ngIf="obraSelecionada" class="summary-grid">
+      <div class="summary-card card-primary">
+        <span>Orçamento Previsto</span>
+        <strong>{{ formatCurrency(orcamentoPrevisto) }}</strong>
+      </div>
+      <div class="summary-card card-accent">
+        <span>Gasto Realizado</span>
+        <strong>{{ formatCurrency(gastoRealizado) }}</strong>
+      </div>
+      <div class="summary-card card-success">
+        <span>Saldo Disponível</span>
+        <strong>{{ formatCurrency(saldoDisponivel) }}</strong>
+      </div>
+      <div class="summary-card card-progress">
+        <span>% Executado</span>
+        <strong>{{ percentualExecutado | number:'1.0-0' }}%</strong>
+      </div>
+    </div>
+
+    <div *ngIf="obraSelecionada" class="progress-card">
+      <div class="progress-details">
+        <div>
+          <small>Progresso financeiro estimado</small>
+          <strong>{{ percentualExecutado | number:'1.0-0' }}% executado</strong>
+        </div>
+        <div class="progress-value">{{ formatCurrency(saldoDisponivel) }} disponível</div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width.%]="percentualExecutado"></div>
+      </div>
+    </div>
+
+    <div *ngIf="iaError" class="alert alert-danger mt-4">
+      <i class="fas fa-exclamation-circle me-2"></i>
+      {{ iaError }}
+    </div>
+
+    <div *ngIf="iaResult" class="ia-result-card shadow-xl">
+      <div class="result-header">
+        <h2>Resultado da IA</h2>
+        <span class="badge bg-info">Análise inteligente</span>
+      </div>
+      <div class="ia-section">
+        <h3>Resumo Executivo</h3>
+        <p>{{ iaResult.resumoExecutivo || iaResult.raw || 'Não foi possível extrair o resumo.' }}</p>
+      </div>
+      <div class="ia-section">
+        <h3>Análise de Desvios</h3>
+        <p>{{ iaResult.analiseDesvios || iaResult.raw || 'Sem detalhes adicionais.' }}</p>
+      </div>
+      <div class="ia-section">
+        <h3>Previsão de Custos Finais</h3>
+        <p>{{ iaResult.previsaoCustosFinais || iaResult.raw || 'Sem previsão disponível.' }}</p>
+      </div>
+      <div class="ia-grid">
+        <div>
+          <h4>Riscos Principais</h4>
+          <p>{{ iaResult.riscosPrincipais || iaResult.raw || 'Nenhum risco identificado.' }}</p>
+        </div>
+        <div>
+          <h4>Recomendações Prioritárias</h4>
+          <p>{{ iaResult.recomendacoesPrioritarias || iaResult.raw || 'Sem recomendações adicionais.' }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="activeTab === 'planilha'" class="tab-panel planilha-tab">
+    <div class="import-actions">
+      <button class="btn btn-outline-secondary" (click)="downloadPlanilhaModelo()" [disabled]="sampleLoading">
+        <i class="fas fa-file-download me-2"></i>
+        {{ sampleLoading ? 'Baixando...' : 'Baixar Planilha de Exemplo' }}
+      </button>
+      <span *ngIf="sampleLoading" class="small text-muted ms-3">Aguarde enquanto o arquivo é preparado.</span>
+    </div>
+
+    <div
+      class="upload-section"
+      [class.drag-over]="dragOver"
+      [class.loading]="loading"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)">
+      <input type="file" #fileInput (change)="onFileSelected($event)" accept=".xlsx,.xls,.csv" hidden />
+      <button class="upload-btn" (click)="fileInput.click()" [disabled]="loading">
+        <i class="fas fa-cloud-upload-alt fa-2x"></i>
+        <div>
+          {{ loading ? '🔄 Processando planilha...' : 'Clique ou arraste XLSX/CSV' }}
+          <small *ngIf="fileName && !loading">{{ fileName }}</small>
+        </div>
+      </button>
+      <p *ngIf="!loading" class="upload-hint">A planilha deve conter colunas de item, rubrica, quantidade e valor.</p>
+    </div>
+
+    <div *ngIf="erro" class="alert alert-danger shadow-lg mb-4">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      {{ erro }}
+      <button class="btn-close float-end" (click)="erro = ''"></button>
+    </div>
+
+    <div *ngIf="resultado" class="resultados">
+      <div class="finance-top-card mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3 class="mb-0">Resumo da Importação</h3>
+          <div class="badge bg-primary">{{ resultado.summary.linhasProcessadas }} linhas</div>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-3">
+            <div class="kpi-mini">
+              <span>Entradas</span>
+              <strong>{{ formatCurrency(resultado.summary.totalEntradas) }}</strong>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="kpi-mini">
+              <span>Saídas</span>
+              <strong>{{ formatCurrency(resultado.summary.totalSaidas) }}</strong>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="kpi-mini">
+              <span>Saldo Final</span>
+              <strong>{{ formatCurrency(resultado.summary.saldoFinal) }}</strong>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="kpi-mini">
+              <span>Previsão</span>
+              <strong>{{ formatCurrency(resultado.summary.saldoFinal + resultado.summary.totalSaidas) }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cards-grid animate__animated animate__fadeInUp">
+        <div class="card position-relative overflow-hidden" [class.danger]="getSaldoAtual() < 0">
+          <div class="card-icon bg-success"><i class="fas fa-wallet"></i></div>
+          <h4>Hoje</h4>
+          <div class="valor-xl" [class]="getCorSaldo(getSaldoAtual())">{{ formatCurrency(getSaldoAtual()) }}</div>
+        </div>
+        <div class="card position-relative overflow-hidden" [class.danger]="getSaldo7() < 0">
+          <div class="card-icon bg-primary"><i class="fas fa-calendar-day"></i></div>
+          <h4>+7 dias</h4>
+          <div class="valor-xl" [class]="getCorSaldo(getSaldo7())">{{ formatCurrency(getSaldo7()) }}</div>
+        </div>
+        <div class="card position-relative overflow-hidden" [class.danger]="getSaldo15() < 0">
+          <div class="card-icon bg-warning"><i class="fas fa-calendar-week"></i></div>
+          <h4>+15 dias</h4>
+          <div class="valor-xl" [class]="getCorSaldo(getSaldo15())">{{ formatCurrency(getSaldo15()) }}</div>
+        </div>
+        <div class="card position-relative overflow-hidden" [class.danger]="getSaldo30() < 0">
+          <div class="card-icon bg-info"><i class="fas fa-calendar-alt"></i></div>
+          <h4>+30 dias</h4>
+          <div class="valor-xl" [class]="getCorSaldo(getSaldo30())">{{ formatCurrency(getSaldo30()) }}</div>
+        </div>
+      </div>
+
+      <div class="table-section shadow-xl">
+        <div class="table-header d-flex justify-content-between align-items-center mb-4">
+          <h3 class="mb-0">Detalhamento Completo</h3>
+          <button class="btn btn-outline-secondary btn-sm" (click)="exportToCSV()">
+            <i class="fas fa-download me-1"></i>Exportar CSV
+          </button>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Tipo</th>
+                <th>Valor Mov.</th>
+                <th>Saldo Acum.</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let linha of resultado.fluxo; let i = index; trackBy: trackByIndex">
+                <td>{{ linha.data }}</td>
+                <td>
+                  <span class="badge fs-6 px-3 py-2" [ngClass]="{
+                    'bg-success text-white': linha.tipo === 'entrada',
+                    'bg-danger text-white': linha.tipo === 'saida'
+                  }">
+                    {{ linha.tipo.toUpperCase() }}
+                  </span>
+                </td>
+                <td [ngClass]="{'text-success fw-semibold': linha.tipo === 'entrada', 'text-danger fw-semibold': linha.tipo === 'saida'}">
+                  {{ formatCurrency(linha.valor * (linha.tipo === 'entrada' ? 1 : -1)) }}
+                </td>
+                <td [ngClass]="{'text-success fw-bold': linha.saldo >= 0, 'text-danger fw-bold': linha.saldo < 0}">
+                  {{ formatCurrency(linha.saldo) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>

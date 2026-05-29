@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 
 // serviços e modelos necessários para carregar os dados da obra
 import { ObrasService } from '../../core/services/obras.service';
@@ -12,14 +13,17 @@ import { Obra, Etapa, Ocorrencia, Custo } from '../../core/models';
 @Component({
   selector: 'app-relatorios',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HttpClientModule],
   templateUrl: './relatorios.component.html',
   styleUrls: ['./relatorios.component.scss']
 })
 export class RelatoriosComponent implements OnInit {
   form: FormGroup;
+  reportType: 'fisico-financeiro' | 'previsao-ia' | 'completo' = 'fisico-financeiro';
+  loadingReport = false;
+  reportError = '';
+  iaPreview = '';
 
-  // dados carregados para o relatório
   obras: Obra[] = [];
   obraSelecionada: Obra | null = null;
   etapas: Etapa[] = [];
@@ -31,9 +35,9 @@ export class RelatoriosComponent implements OnInit {
     private obrasService: ObrasService,
     private etapasService: EtapasService,
     private ocorrenciasService: OcorrenciasService,
-    private custosService: CustosService
+    private custosService: CustosService,
+    private http: HttpClient
   ) {
-    // inicializa o formulário com controle para obra e as opções de inclusão
     this.form = this.fb.group({
       obraId: [''],
       andamento: [true],
@@ -46,12 +50,10 @@ export class RelatoriosComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // carrega a lista de obras existentes para seleção
     this.obrasService.getAll().subscribe(list => {
       this.obras = list;
     });
 
-    // quando o usuário escolher uma obra, carregamos seus dados relacionados
     this.form.get('obraId')?.valueChanges.subscribe((id: string) => {
       if (id) {
         this.carregarDadosDaObra(id);
@@ -71,136 +73,155 @@ export class RelatoriosComponent implements OnInit {
     this.custosService.getByObraId(id).subscribe(c => (this.custos = c));
   }
 
-  gerar() {
-    const values = this.form.value;
+  selecionarTipo(tipo: 'fisico-financeiro' | 'previsao-ia' | 'completo'): void {
+    this.reportType = tipo;
+    this.reportError = '';
+  }
 
+  gerar(): void {
+    const values = this.form.value;
     if (!values.obraId) {
-      alert('Selecione uma obra antes de gerar o relatório.');
+      this.reportError = 'Selecione uma obra antes de gerar o relatório.';
+      return;
+    }
+    if (!this.obraSelecionada) {
+      this.reportError = 'Obra não encontrada. Selecione novamente.';
       return;
     }
 
-    // estilos e marcação inicial
-    const style = `
-      <style>
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin:0; padding:0; color:#1f2937; font-size:12px; }
-        h1,h2,h3,h4,h5,h6 { margin:0; font-weight:600; color:#0f172a; }
-        .header { background:#0f172a url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></svg>') repeat; color:#fff; padding:20px 40px; display:flex; align-items:center; }
-        .header img { height:40px; margin-right:15px; }
-        .header-title { font-size:24px; letter-spacing:1px; }
-        .divider-orange { border-top:2px solid #f97316; margin:8px 0 24px; }
-        .section { padding:20px 40px; }
-        .section h2 { font-size:18px; margin-bottom:12px; color:#0f172a; }
-        .summary { display:flex; gap:16px; flex-wrap:wrap; }
-        .card { background:#fff; border-radius:8px; padding:14px 18px; flex:1 1 180px; box-shadow:0 4px 8px rgba(0,0,0,.08); }
-        .card .label { font-size:11px; color:#4b5563; text-transform:uppercase; letter-spacing:0.5px; }
-        .card .value { font-size:16px; font-weight:700; margin-top:6px; color:#0f172a; }
-        .progress-bar { background:#e5e7eb; border-radius:4px; overflow:hidden; height:8px; margin-top:4px; }
-        .progress-bar-inner { height:100%; background:#f97316; }
-        .etapa-cards { display:flex; gap:16px; }
-        .etapa-card { background:#fff; border-radius:8px; padding:12px 16px; flex:1; box-shadow:0 4px 8px rgba(0,0,0,.08); }
-        .etapa-status { font-size:12px; font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:4px; }
-        .etapa-status .dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
-        .status-planejada { background:#6b7280; }
-        .status-em_execucao { background:#0d9488; }
-        .status-concluida { background:#15803d; }
-        .status-nao_iniciada { background:#e11d48; }
-        table { width:100%; border-collapse:collapse; margin-top:4px; font-size:12px; }
-        table th, table td { border:1px solid #e5e7eb; padding:8px; }
-        table th { background:#0f172a; color:#fff; }
-        .total-row td { font-weight:700; }
-        .total-value { color:#f97316; font-size:16px; }
-        .bar-chart { width:100%; height:150px; }
-        .footer { position:fixed; bottom:0; width:100%; font-size:10px; text-align:center; color:#6b7280; padding:8px 0; border-top:1px solid #e5e7eb; }
-      </style>
-    `;
+    this.reportError = '';
+    this.loadingReport = true;
 
-    let content = `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body>`;
+    const gerarRelatorio = () => {
+      const style = this.buildReportStyle();
+      const documentHtml = this.buildReportDocument(style, values);
+      const w = window.open('', '_blank');
+      if (w) {
+        w.document.write(documentHtml);
+        w.document.close();
+        setTimeout(() => w.print(), 600);
+      } else {
+        this.reportError = 'Falha ao abrir a janela de impressão. Verifique seu bloqueador de popups.';
+      }
+      this.loadingReport = false;
+    };
 
-    // header
-    content += `<div class="header"><img src="https://res.cloudinary.com/dcu5ccvzu/image/upload/v1773104064/ObraHub_4_miophn.png" alt="ObraHub"/><div class="header-title">RELATÓRIO DA OBRA</div></div>`;
-    content += `<div class="divider-orange"></div>`;
-
-    // resumo
-    content += `<div class="section"><h2>Resumo da Obra</h2><div class="summary">${this.buildSummaryCards()}</div></div>`;
-
-    if (values.andamento) { content += this.buildEtapasSection(); }
-    if (values.financeiro) { content += this.buildCustosSection(); }
-    if (values.problemas) { content += this.buildOcorrenciasSection(); }
-    if (values.qualidade) { content += '<div class="section"><h2>Qualidade</h2><p>Dados de qualidade não disponíveis.</p></div>'; }
-
-    content += `<div class="footer">Relatório gerado em: ${new Date().toLocaleDateString()} &nbsp;|&nbsp; Gerado por ObraHub &nbsp;|&nbsp; Página <span class="page"></span></div>`;
-    content += `</body></html>`;
-
-    const w = window.open('', '_blank');
-    if (w) {
-      w.document.write(content);
-      w.document.close();
-      setTimeout(() => w.print(), 500);
+    if (this.reportType === 'previsao-ia') {
+      this.http
+        .post<any>('/api/ai/previsao-custos', {
+          obra: this.obraSelecionada,
+          itens: this.custos,
+        })
+        .subscribe({
+          next: (resp) => {
+            this.iaPreview = this.parseIaResponse(resp);
+            gerarRelatorio();
+          },
+          error: () => {
+            this.iaPreview = 'Não foi possível obter a previsão por IA. O relatório será gerado com os dados disponíveis.';
+            gerarRelatorio();
+          }
+        });
     } else {
-      alert('Não foi possível abrir a janela para gerar o relatório.');
+      gerarRelatorio();
     }
   }
 
-  private formatDate(date?: any): string {
-    if (!date) return 'N/A';
-    const d = new Date(date);
-    return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;
+  private buildReportStyle(): string {
+    return `
+      <style>
+        body { margin:0; padding:0; font-family:'Inter', 'Helvetica Neue', Arial, sans-serif; color:#0f172a; background:#f8fafc; }
+        .page { width: 100%; padding: 0; margin: 0; }
+        .container { max-width: 1120px; margin: 0 auto; padding: 24px 28px; }
+        .header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; background:#0f172a; color:#fff; padding:24px 28px; border-radius:20px; }
+        .title { font-size:28px; letter-spacing:0.02em; margin:0; }
+        .meta { font-size:13px; color:rgba(255,255,255,0.75); margin-top:8px; }
+        .section { margin-top:26px; padding:24px 28px; background:#ffffff; border-radius:20px; box-shadow:0 14px 42px rgba(15,23,42,0.08); }
+        .section h2 { margin:0 0 16px; font-size:19px; color:#111827; }
+        .card-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:18px; }
+        .card { padding:18px 20px; border-radius:16px; background:#f8fafc; border:1px solid #e2e8f0; }
+        .label { display:block; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:#6b7280; margin-bottom:10px; }
+        .value { font-size:18px; font-weight:700; color:#0f172a; }
+        .small-text { font-size:13px; color:#475569; margin-top:10px; }
+        .progress { background:#e5e7eb; border-radius:999px; height:12px; overflow:hidden; margin-top:12px; }
+        .progress-inner { height:100%; background:#2563eb; }
+        .table { width:100%; border-collapse:collapse; margin-top:14px; }
+        .table th, .table td { padding:12px 14px; border:1px solid #e2e8f0; text-align:left; font-size:13px; }
+        .table th { background:#eff6ff; color:#0f172a; }
+        .compact-row { font-size:12px; color:#475569; }
+        .note { padding:16px 18px; background:#eff6ff; border-radius:14px; color:#1d4ed8; margin-top:16px; }
+        .footer { margin-top:28px; font-size:11px; color:#6b7280; text-align:center; }
+        .badge { display:inline-flex; align-items:center; gap:8px; margin-top:8px; padding:8px 12px; border-radius:999px; background:rgba(59,130,246,0.12); color:#1d4ed8; font-size:12px; }
+        @media print { .page { padding:0; } .container { box-shadow:none; } .header, .section { box-shadow:none; border:none; } }
+      </style>
+    `;
+  }
+
+  private buildReportDocument(style: string, values: any): string {
+    const obra = this.obraSelecionada!;
+    const resumo = this.buildSummaryCards();
+    const etapas = values.andamento ? this.buildEtapasSection() : '';
+    const custos = values.financeiro ? this.buildCustosSection() : '';
+    const ocorrencias = values.problemas ? this.buildOcorrenciasSection() : '';
+    const ia = this.reportType === 'previsao-ia' ? this.buildIaSection() : '';
+    const completo = this.reportType === 'completo' ? this.buildCompletoSection() : '';
+
+    return `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body><div class="page"><div class="container"><div class="header"><div><h1 class="title">Relatório de Obra</h1><div class="meta">Obra: ${obra.name} • Status: ${obra.status} • Gerado em ${new Date().toLocaleDateString()}</div></div><div class="badge">${this.reportType === 'fisico-financeiro' ? 'Andamento Físico-Financeiro' : this.reportType === 'previsao-ia' ? 'Previsão com IA' : 'Relatório Completo'}</div></div>${resumo}${etapas}${custos}${ocorrencias}${ia}${completo}<div class="footer">ObraHub • Relatório gerado automaticamente • Página 1</div></div></div></body></html>`;
+  }
+
+  private parseIaResponse(resp: any): string {
+    if (resp?.data && typeof resp.data === 'object') {
+      return JSON.stringify(resp.data, null, 2);
+    }
+    return String(resp?.raw || resp?.texto || resp || 'Sem conteúdo da IA.');
   }
 
   private buildSummaryCards(): string {
     if (!this.obraSelecionada) return '';
     const o = this.obraSelecionada;
-    const cards = [];
-    cards.push(`<div class="card"><div class="label">Status</div><div class="value">${o.status || 'N/A'}</div></div>`);
-    // progresso com barra
-    cards.push(`<div class="card"><div class="label">Progresso</div><div class="value">${o.progresso || 0}%</div>` +
-               `<div class="progress-bar"><div class="progress-bar-inner" style="width:${o.progresso || 0}%"></div></div></div>`);
-    cards.push(`<div class="card"><div class="label">Início</div><div class="value">${this.formatDate(o.dataInicio)}</div></div>`);
-    cards.push(`<div class="card"><div class="label">Orçamento</div><div class="value">R$ ${o.orcamentoPrevisto || 0}</div></div>`);
-    return cards.join('');
+    const orcamento = o.orcamentoPrevisto ?? o.orcamentoTotal ?? 0;
+    const progresso = o.progresso ?? 0;
+    return `<div class="section"><h2>Visão Geral da Obra</h2><div class="card-grid"><div class="card"><span class="label">Início previsto</span><div class="value">${this.formatDate(o.dataInicio)}</div></div><div class="card"><span class="label">Status</span><div class="value">${o.status}</div></div><div class="card"><span class="label">Orçamento</span><div class="value">R$ ${orcamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div></div><div class="card"><span class="label">Progresso</span><div class="value">${progresso}%</div><div class="progress"><div class="progress-inner" style="width:${progresso}%"></div></div></div></div></div>`;
+  }
+
+  private buildIaSection(): string {
+    return `<div class="section"><h2>Previsão de Custos com IA</h2><p class="note">${this.iaPreview}</p></div>`;
+  }
+
+  private buildCompletoSection(): string {
+    let html = '<div class="section"><h2>Resumo Completo</h2><p class="small-text">Este relatório reúne andamento, finanças, ocorrências e informações de qualidade em um único documento.</p>';
+    html += this.buildEtapasSection();
+    html += this.buildCustosSection();
+    html += this.buildOcorrenciasSection();
+    html += '</div>';
+    return html;
   }
 
   private buildCostChart(): string {
     if (!this.custos || this.custos.length === 0) return '';
-    // aggregate by category
     const totals: { [cat: string]: number } = {};
     this.custos.forEach(c => {
-      const categoria = c.categoria ?? 'Sem Categoria';
-      totals[categoria] = (totals[categoria] ?? 0) + (c.valor ?? 0);
+      const categoria = c.categoria ?? 'Sem categoria';
+      totals[categoria] = (totals[categoria] ?? 0) + (c.valor || 0);
     });
     const labels = Object.keys(totals);
-    const values = labels.map(l => totals[l]);
+    const values = labels.map((label) => totals[label]);
     const max = Math.max(...values, 1);
-    const barWidth = 20;
-    const spacing = 10;
-    const height = 150;
-    let svg = `<svg width="${labels.length * (barWidth + spacing)}" height="${height}">`;
-    labels.forEach((lbl, i) => {
-      const h = (values[i] / max) * (height - 20);
-      const x = i * (barWidth + spacing);
-      svg += `<rect x="${x}" y="${height - h - 10}" width="${barWidth}" height="${h}" fill="#f97316" />`;
-      svg += `<text x="${x + barWidth/2}" y="${height - 2}" font-size="10" text-anchor="middle">${lbl}</text>`;
-    });
-    svg += `</svg>`;
-    return svg;
+    const bars = labels.map((label, index) => {
+      const height = Math.round((values[index] / max) * 100);
+      return `<div style="display:inline-block; width:18%; margin-right:4%; text-align:center;"><div style="height:120px; background:#2563eb; width:100%; border-radius:12px 12px 0 0; margin-bottom:10px; transform: translateY(${120 - height}px);"></div><div style="font-size:11px; color:#475569;">${label}</div></div>`;
+    }).join('');
+    return `<div style="margin-top:18px; display:flex; justify-content:flex-start; gap:18px; flex-wrap:wrap;">${bars}</div>`;
   }
 
   private buildEtapasSection(): string {
-    let html = '<div class="section"><h2>Etapas</h2>';
+    let html = '<div class="section"><h2>Andamento de Etapas</h2>';
     if (!this.etapas || this.etapas.length === 0) {
-      html += '<p>Nenhuma etapa cadastrada.</p>';
+      html += '<p class="small-text">Nenhuma etapa cadastrada.</p>';
     } else {
-      html += '<div class="summary">';
+      html += '<div class="card-grid">';
       this.etapas.forEach(e => {
-        const dotClass = `status-${e.status.replace(/\s+/g, '_')}`;
-        html += `<div class="etapa-card">` +
-                `<div class="etapa-status"><span class="dot ${dotClass}"></span>${e.nome}</div>` +
-                `<div class="progress-bar"><div class="progress-bar-inner" style="width:${e.progresso || 0}%"></div></div>` +
-                `<div class="label" style="margin-top:6px;">${e.progresso || 0}%</div>`;
-        if (e.dataPrevista) {
-          html += `<div class="label">Prevista: ${this.formatDate(e.dataPrevista)}</div>`;
-        }
-        html += '</div>';
+        html += `<div class="card"><span class="label">${e.nome}</span><div class="value">${e.progresso || 0}%</div><div class="progress"><div class="progress-inner" style="width:${e.progresso || 0}%"></div></div><div class="small-text">${this.formatDate(e.dataPrevista)}</div></div>`;
       });
       html += '</div>';
     }
@@ -209,29 +230,16 @@ export class RelatoriosComponent implements OnInit {
   }
 
   private buildCustosSection(): string {
-    let html = '<div class="section"><h2>Custos</h2>';
+    let html = '<div class="section"><h2>Resumo Financeiro</h2>';
     if (!this.custos || this.custos.length === 0) {
-      html += '<p>Nenhum custo registrado.</p>';
+      html += '<p class="small-text">Nenhum custo registrado.</p>';
     } else {
-      // divider two columns: tabela + gráfico simples
-      const chart = this.buildCostChart();
-      html += '<div style="display:flex; gap:20px; align-items:flex-start;">';
-      html += '<div style="flex:2;">';
-      html += '<table><thead><tr><th>Categoria</th><th>Descrição</th><th>Data</th><th>Valor</th></tr></thead><tbody>';
+      html += '<table class="table"><thead><tr><th>Categoria</th><th>Descrição</th><th>Data</th><th>Valor</th></tr></thead><tbody>';
       this.custos.forEach(c => {
-        html += `<tr><td>${c.categoria}</td><td>${c.descricao}</td><td>${this.formatDate(c.data)}</td><td>R$ ${c.valor}</td></tr>`;
+        html += `<tr><td>${c.categoria}</td><td>${c.descricao}</td><td>${this.formatDate(c.data)}</td><td>R$ ${c.valor?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td></tr>`;
       });
-      html += '</tbody></table>';
-      const total = this.custos.reduce((s, c) => s + (c.valor || 0), 0);
-      html += `<p class="total-row"><strong>Total:</strong> <span class="total-value">R$ ${total}</span></p>`;
-      html += '</div>'; // end table column
-
-      html += '<div style="flex:1;">';
-      html += '<h3 style="margin-top:0;">Financeiro</h3>';
-      html += chart;
-      html += '</div>'; // end chart column
-
-      html += '</div>'; // end flex container
+      const total = this.custos.reduce((acc, item) => acc + (item.valor || 0), 0);
+      html += `</tbody></table><p class="small-text"><strong>Total de custos:</strong> R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>`;
     }
     html += '</div>';
     return html;
@@ -240,15 +248,21 @@ export class RelatoriosComponent implements OnInit {
   private buildOcorrenciasSection(): string {
     let html = '<div class="section"><h2>Ocorrências</h2>';
     if (!this.ocorrencias || this.ocorrencias.length === 0) {
-      html += '<p>Nenhuma ocorrência registrada.</p>';
+      html += '<p class="small-text">Nenhuma ocorrência registrada.</p>';
     } else {
-      html += '<table><thead><tr><th>Data</th><th>Descrição</th><th>Clima</th><th>Equipe</th></tr></thead><tbody>';
+      html += '<table class="table"><thead><tr><th>Data</th><th>Descrição</th><th>Clima</th><th>Equipe</th></tr></thead><tbody>';
       this.ocorrencias.forEach(o => {
-        html += `<tr><td>${this.formatDate(o.data)}</td><td>${o.descricao}</td><td>${o.clima || ''}</td><td>${o.equipe || ''}</td></tr>`;
+        html += `<tr><td>${this.formatDate(o.data)}</td><td>${o.descricao}</td><td>${o.clima || '-'}</td><td>${o.equipe || '-'}</td></tr>`;
       });
       html += '</tbody></table>';
     }
     html += '</div>';
     return html;
+  }
+
+  private formatDate(date?: any): string {
+    if (!date) return 'N/A';
+    const d = new Date(date);
+    return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`;
   }
 }

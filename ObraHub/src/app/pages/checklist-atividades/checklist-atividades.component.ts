@@ -67,6 +67,7 @@ export class ChecklistAtividadesComponent implements OnInit {
   };
 
   etapasDisponiveis: string[] = [];
+  filtroStatusChecklist: 'pendente' | 'em_andamento' | 'concluido' | 'todos' = 'pendente';
 
   constructor(
     private obrasService: ObrasService,
@@ -360,5 +361,85 @@ export class ChecklistAtividadesComponent implements OnInit {
       .subscribe(() => {
         etapa.status = novoStatus;
       });
+  }
+
+  setFiltroChecklist(status: 'pendente' | 'em_andamento' | 'concluido' | 'todos'): void {
+    this.filtroStatusChecklist = status;
+  }
+
+  get atividadesFiltradasChecklist(): Atividade[] {
+    if (this.filtroStatusChecklist === 'todos') {
+      return this.atividades;
+    }
+    return this.atividades.filter((a) => this.normalizarStatus(a.status) === this.filtroStatusChecklist);
+  }
+
+  get totalPendentes(): number {
+    return this.atividades.filter((a) => this.normalizarStatus(a.status) === 'pendente').length;
+  }
+
+  get totalEmAndamento(): number {
+    return this.atividades.filter((a) => this.normalizarStatus(a.status) === 'em_andamento').length;
+  }
+
+  get totalConcluidos(): number {
+    return this.atividades.filter((a) => this.normalizarStatus(a.status) === 'concluido').length;
+  }
+
+  progressoAtividade(item: Atividade): number {
+    const status = this.normalizarStatus(item.status);
+    if (status === 'concluido') {
+      return 100;
+    }
+    if (status === 'em_andamento') {
+      return 55;
+    }
+    return 0;
+  }
+
+  getStatusLabel(item: Atividade): string {
+    const status = this.normalizarStatus(item.status);
+    if (status === 'concluido') {
+      return 'Concluído';
+    }
+    if (status === 'em_andamento') {
+      return 'Em andamento';
+    }
+    return 'Pendente';
+  }
+
+  getStatusClass(item: Atividade): string {
+    const status = this.normalizarStatus(item.status);
+    if (status === 'concluido') {
+      return 'status-concluido';
+    }
+    if (status === 'em_andamento') {
+      return 'status-andamento';
+    }
+    return 'status-pendente';
+  }
+
+  getProgressClass(item: Atividade): string {
+    const status = this.normalizarStatus(item.status);
+    if (status === 'concluido') {
+      return 'bar-concluido';
+    }
+    if (status === 'em_andamento') {
+      return 'bar-andamento';
+    }
+    return 'bar-pendente';
+  }
+
+  private normalizarStatus(status?: string): 'pendente' | 'em_andamento' | 'concluido' {
+    if (!status) {
+      return 'pendente';
+    }
+    if (status === 'concluido') {
+      return 'concluido';
+    }
+    if (status === 'em_andamento') {
+      return 'em_andamento';
+    }
+    return 'pendente';
   }
 }

@@ -57,6 +57,7 @@ exports.alertasDashboard = async (req, res) => {
  */
 exports.uploadPlanilha = async (req, res) => {
   try {
+    console.log('Recebendo arquivo:', req.file ? req.file.originalname : 'Nenhum arquivo recebido')
     if (!req.file) {
       return res.status(400).json({
         success: false,

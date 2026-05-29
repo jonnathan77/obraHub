@@ -16,7 +16,7 @@ import { FooterComponent } from './layout/footer.component';
 })
 export class AppComponent implements OnInit, OnDestroy {
   title = 'ObraHub';
-  showLayout = true;
+  showLayout = false;
   private sub?: Subscription;
 
   constructor(private router: Router) {}
@@ -31,6 +31,7 @@ export class AppComponent implements OnInit, OnDestroy {
       // hide navbar/sidebar on login route (and its children)
       this.showLayout = !e.urlAfterRedirects.startsWith('/login');
     });
+    this.showLayout = false;
   }
 
   ngOnDestroy(): void {
