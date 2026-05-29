@@ -282,6 +282,42 @@ uploadFile(file: File): void {
   });
 }
 
+downloadPlanilhaModelo(): void {
+  this.sampleLoading = true;
+  this.erro = '';
+
+  const token = this.auth.getToken();
+
+  console.log('Baixando planilha modelo - Token existe?', !!token);
+
+  this.http
+    .get(`${API}/api/ai/planilha-modelo`, {
+      responseType: 'blob',
+      headers: {
+        Authorization: token ? `Bearer ${token}` : '',
+      }
+    })
+    .subscribe({
+      next: (blob: Blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'planilha_modelo_obrahub.xlsx';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        this.sampleLoading = false;
+        console.log('✅ Planilha de exemplo baixada com sucesso');
+      },
+      error: (err: HttpErrorResponse) => {
+        console.error('Erro ao baixar planilha modelo:', err);
+        this.erro = err.error?.message || 'Não foi possível baixar a planilha de exemplo. Verifique sua conexão.';
+        this.sampleLoading = false;
+      }
+    });
+}
   onDragOver(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
