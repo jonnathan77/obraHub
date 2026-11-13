@@ -2,19 +2,29 @@ const router = require('express').Router()
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
 const db = require('../config/database')
+const authMiddleware = require('../middlewares/auth.middleware')
 
 //Registrar
-router.post('/register', async (req, res) => {
+router.post('/register', authMiddleware, async (req, res) => {
   try {
     const { email, password, nome, empresaid } = req.body
 
-    if (!email || !password || !nome || !empresaid) {
-      return res.status(400).json({ error: 'Email, senha, nome e empresaid são obrigatórios' })
+    if (!email || !password || !nome) {
+      return res.status(400).json({ error: 'Email, senha e nome são obrigatórios' })
+    }
+
+    if (typeof password !== 'string' || password.length < 8) {
+      return res.status(400).json({ error: 'A senha deve ter pelo menos 8 caracteres' })
+    }
+
+    if (empresaid != null && String(empresaid) !== String(req.user.empresaid)) {
+      return res.status(403).json({ error: 'Não é permitido cadastrar usuário em outra empresa' })
     }
 
     // Verificar se usuário já existe
-    const existsQuery = 'SELECT id FROM usuario WHERE email = $1'
-    const existsResult = await db.query(existsQuery, [email])
+    const emailNormalizado = String(email).trim().toLowerCase()
+    const existsQuery = 'SELECT id FROM usuario WHERE LOWER(email) = $1'
+    const existsResult = await db.query(existsQuery, [emailNormalizado])
 
     if (existsResult.rows.length > 0) {
       return res.status(400).json({ error: 'Usuário já existe' })
@@ -30,7 +40,7 @@ router.post('/register', async (req, res) => {
       RETURNING id, email, nome, empresaid
     `
 
-    const result = await db.query(insertQuery, [email, hashedPassword, nome, empresaid])
+    const result = await db.query(insertQuery, [emailNormalizado, hashedPassword, nome, req.user.empresaid])
     const user = result.rows[0]
 
     res.status(201).json({
@@ -58,7 +68,7 @@ router.post('/login', async (req, res) => {
     const query = 'SELECT id, email, senhahash, nome, empresaid FROM usuario WHERE email = $1'
 
     console.log(query);
-    const result = await db.query(query, [email])
+    const result = await db.query(query, [String(email).trim().toLowerCase()])
 
     if (result.rows.length === 0) {
       return res.status(401).json({ error: 'Email ou senha inválidos' })

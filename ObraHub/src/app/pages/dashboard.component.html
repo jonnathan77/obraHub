@@ -18,7 +18,6 @@
       </div>
       <button class="btn-icon" (click)="onBotaoClick('notificacoes')">
         <i class="bi bi-bell"></i>
-        <span class="notification-dot">3</span>
       </button>
       <button class="btn-primary-dashboard" (click)="openNovaObraModal()">
         <i class="bi bi-plus-lg"></i>
@@ -31,11 +30,10 @@
     <div class="finance-summary">
       <div class="finance-status">
         <span class="label">STATUS FINANCEIRO DA OBRA</span>
-        <span style="margin-left: 10px;" class="health-badge"><i class="bi bi-check-circle-fill"></i> Saudável</span>
+        <span style="margin-left: 10px;" class="health-badge"><i class="bi bi-info-circle"></i> {{ alertaFinanceiro }}</span>
         <p>
-          Sua obra utilizou {{ consumoPercentual }}% do orçamento previsto.
-          Mantendo este ritmo, existe <strong>risco de ultrapassar</strong> o valor planejado
-          em {{ resumoFinanceiro.riscoDias }} dias.
+          Compras de materiais representam {{ consumoPercentual }}% do orçamento informado.
+          A diferença para o progresso físico é um sinal para investigação, não um prejuízo confirmado.
         </p>
       </div>
       <div class="finance-kpis">
@@ -44,12 +42,12 @@
           <strong>R$ {{ resumoFinanceiro.orcamentoTotal | number:'1.0-0' }}</strong>
         </div>
         <div class="kpi">
-          <span>GASTO ATUAL</span>
+          <span>COMPRAS DE MATERIAIS</span>
           <strong>R$ {{ resumoFinanceiro.gastoAtual | number:'1.0-0' }}</strong>
         </div>
         <div class="kpi">
-          <span>PREVISÃO FINAL</span>
-          <strong>R$ {{ resumoFinanceiro.previsaoFinal | number:'1.0-0' }}</strong>
+          <span>PROGRESSO FÍSICO</span>
+          <strong>{{ obraAtual?.progresso || 0 }}%</strong>
         </div>
         <div class="kpi">
           <span>RESTANTE</span>
@@ -62,18 +60,18 @@
           <strong>{{ consumoPercentual }}%</strong>
         </div>
         <div class="progress-bar-dashboard">
-          <div class="progress-fill" [style.width.%]="consumoPercentual"></div>
+          <div class="progress-fill" [style.width.%]="consumoPercentual > 100 ? 100 : consumoPercentual"></div>
         </div>
-        <span class="consumo-footer">Dentro do previsto</span>
+        <span class="consumo-footer">{{ alertaFinanceiro }}</span>
       </div>
     </div>
 
     <div class="finance-evolution">
-      <span>EVOLUÇÃO DOS GASTOS (ÚLTIMOS 30 DIAS)</span>
+      <span>COMPRAS DE MATERIAIS (ÚLTIMOS MESES)</span>
       <svg viewBox="0 0 240 80" preserveAspectRatio="none">
         <polyline [attr.points]="pontosEvolucaoGastos"></polyline>
       </svg>
-      <p>Total gasto no período: <strong>R$ {{ resumoFinanceiro.gastoPeriodo | number:'1.0-0' }}</strong></p>
+      <p>Total de compras no período: <strong>R$ {{ resumoFinanceiro.gastoPeriodo | number:'1.0-0' }}</strong></p>
     </div>
   </section>
 
@@ -119,24 +117,23 @@
   <section class="middle-grid">
     <article class="box-card">
       <div class="box-head">
-        <h2>Orçado vs Real</h2>
+        <h2>Compras por mês</h2>
         <button (click)="alterarPeriodoGrafico(periodoGrafico === '6m' ? '1a' : '6m')">
           {{ periodoGrafico === '6m' ? 'Últimos 6 meses' : 'Último 1 ano' }} <i class="bi bi-chevron-down"></i>
         </button>
       </div>
       <div class="legend">
-        <span><i class="dot dot-blue"></i> Orçado</span>
-        <span><i class="dot dot-green"></i> Real</span>
+        <span><i class="dot dot-green"></i> Compras registradas</span>
       </div>
-      <div class="bars">
+      <div class="bars" *ngIf="movimentacoes.length; else semCompras">
         <div class="bar-month" *ngFor="let item of serieOrcadoVsRealExibida">
           <div class="bar-wrap">
-            <div class="bar bar-budget" [style.height.%]="(item.orcado / 120000) * 100"></div>
-            <div class="bar bar-real" [style.height.%]="(item.real / 120000) * 100"></div>
+            <div class="bar bar-real" [style.height.%]="alturaBarra(item.real)"></div>
           </div>
           <span>{{ item.mes }}</span>
         </div>
       </div>
+      <ng-template #semCompras><p class="text-muted">Sem movimentações de compra no período.</p></ng-template>
     </article>
 
     <article class="box-card">
@@ -144,7 +141,7 @@
         <h2>Diário da Obra</h2>
         <button (click)="onBotaoClick('ver_calendario')">Ver calendário</button>
       </div>
-      <div class="timeline">
+      <div class="timeline" *ngIf="diarioObra.length; else semMovimentacoes">
         <div class="timeline-item" *ngFor="let item of diarioObra">
           <div class="date-pill">
             <strong>{{ item.dia }}</strong>
@@ -167,6 +164,7 @@
           </div>
         </div>
       </div>
+      <ng-template #semMovimentacoes><p class="text-muted">Nenhuma movimentação registrada para esta obra.</p></ng-template>
       <a class="timeline-link" href="javascript:void(0)" (click)="onBotaoClick('ver_todas_atividades')">Ver todas as atividades do dia</a>
     </article>
   </section>

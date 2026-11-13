@@ -37,6 +37,11 @@ interface Resultado {
   };
 }
 
+interface UploadResponse {
+  success: boolean;
+  data: Resultado;
+}
+
 interface IaPrevisao {
   resumoExecutivo: string;
   analiseDesvios: string;
@@ -159,10 +164,10 @@ export class FinanceiroComponent implements OnInit {
     this.iaResult = null;
 
     this.http
-      .post<any>('/api/ai/previsao-custos', {
+      .post<any>(`${API}/api/ai/previsao-custos`, {
         obra: this.obraSelecionada,
         itens: this.custos,
-      })
+      }, this.headers())
       .subscribe({
         next: (resp) => {
           this.iaResult = this.parseIaResponse(resp);
@@ -262,15 +267,14 @@ uploadFile(file: File): void {
   // Log para debug (remova depois)
   console.log('Enviando upload - Token existe?', !!token);
 
-  this.http.post<Resultado>(`${API}/api/financeiro/upload`, formData, {
+  this.http.post<UploadResponse>(`${API}/api/financeiro/upload`, formData, {
     headers: {
       Authorization: token ? `Bearer ${token}` : '',
     },
     // Importante: não definir Content-Type manualmente com FormData
   }).subscribe({
-    next: (data: Resultado) => {
-      console.log('Upload realizado com sucesso:', data);
-      this.resultado = data;
+    next: (response: UploadResponse) => {
+      this.resultado = response.data;
       this.updateChart();
       this.loading = false;
     },

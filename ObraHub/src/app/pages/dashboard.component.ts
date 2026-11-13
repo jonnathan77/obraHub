@@ -10,7 +10,7 @@ import { MateriaisService } from '@services/materiais.service';
 import { MovimentacoesService } from '@services/movimentacoes.service';
 import { AtividadesService } from '@services/atividades.service';
 import { CreateObraComponent } from '../components/create-obra/create-obra.component';
-import { Obra, Etapa, Custo } from '@models/index';
+import { Obra, Etapa, Custo, Movimentacao } from '@models/index';
 
 @Component({
   selector: 'app-dashboard',
@@ -45,68 +45,12 @@ export class DashboardComponent implements OnInit {
   resumoFinanceiro = {
     orcamentoTotal: 0,
     gastoAtual: 0,
-    previsaoFinal: 0,
     restante: 0,
-    gastoPeriodo: 0,
-    riscoDias: 14
+    gastoPeriodo: 0
   };
 
-  serieEvolucaoGastos = [38, 42, 40, 46, 50, 48, 56, 54, 59, 64];
-  serieOrcadoVsReal = [
-    { mes: 'Set', orcado: 24000, real: 19000 },
-    { mes: 'Out', orcado: 40000, real: 36500 },
-    { mes: 'Nov', orcado: 80000, real: 62500 },
-    { mes: 'Dez', orcado: 86000, real: 64000 },
-    { mes: 'Jan', orcado: 96000, real: 91000 },
-    { mes: 'Fev', orcado: 112000, real: 108000 }
-  ];
-  serieOrcadoVsRealAno = [
-    { mes: 'Mar', orcado: 12000, real: 10000 },
-    { mes: 'Abr', orcado: 18000, real: 15000 },
-    { mes: 'Mai', orcado: 23000, real: 21000 },
-    { mes: 'Jun', orcado: 32000, real: 29800 },
-    { mes: 'Jul', orcado: 42000, real: 38400 },
-    { mes: 'Ago', orcado: 52000, real: 48600 },
-    { mes: 'Set', orcado: 62000, real: 59000 },
-    { mes: 'Out', orcado: 76000, real: 71200 },
-    { mes: 'Nov', orcado: 90000, real: 84500 },
-    { mes: 'Dez', orcado: 100000, real: 93400 },
-    { mes: 'Jan', orcado: 110000, real: 103000 },
-    { mes: 'Fev', orcado: 120000, real: 112500 }
-  ];
-
-  diarioObra = [
-    {
-      dia: '12',
-      mes: 'NOV',
-      titulo: 'Instalação elétrica - 3º andar',
-      tipo: 'ATIVIDADE',
-      descricao: 'Passagem de eletrodutos e fixação de caixas.',
-      detalhe: 'Equipe: 4 pessoas',
-      hora: '08:30',
-      imagem: ''
-    },
-    {
-      dia: '12',
-      mes: 'NOV',
-      titulo: 'Concretagem da laje - Bloco B',
-      tipo: 'ATIVIDADE',
-      descricao: 'Concretagem da laje do 5º pavimento.',
-      detalhe: 'Equipe: 6 pessoas',
-      hora: '14:20',
-      imagem: ''
-    },
-    {
-      dia: '12',
-      mes: 'NOV',
-      titulo: 'Atraso no fornecimento de tijolos',
-      tipo: 'OCORRÊNCIA',
-      descricao: 'Fornecedor informou atraso na entrega programada.',
-      detalhe: 'Impacto: Médio',
-      hora: '16:45',
-      imagem: ''
-    }
-  ];
+  serieEvolucaoGastos: number[] = [];
+  movimentacoes: Movimentacao[] = [];
 
   acoesRapidas = [
     { icone: 'bi-cash-coin', titulo: 'Lançar gasto', subtitulo: 'Registrar novo gasto' },
@@ -123,7 +67,6 @@ export class DashboardComponent implements OnInit {
     pausada: 0,
     concluida: 0
   };
-  usuario: any = null;
   nomeUsuario = '';
 
   constructor(
@@ -155,7 +98,10 @@ export class DashboardComponent implements OnInit {
       this.obras = obras;
       this.obrasDisponiveis = obras;
       this.obrasAtivas = obras.filter((o: Obra) => o.status === 'Execucao').length;
-      this.obrasAtrasadas = obras.filter((o: Obra) => o.status === 'Pausada').length;
+      this.obrasAtrasadas = obras.filter((o: Obra) =>
+        o.status !== 'Concluida' && !!o.dataFimPrevista &&
+        new Date(o.dataFimPrevista).getTime() < new Date().setHours(0, 0, 0, 0)
+      ).length;
 
       this.statusStats = {
         planejada: obras.filter((o: Obra) => o.status === 'Planejada').length,
@@ -164,9 +110,6 @@ export class DashboardComponent implements OnInit {
         concluida: obras.filter((o: Obra) => o.status === 'Concluida').length
       };
 
-      this.resumoFinanceiro.orcamentoTotal = obras.reduce((sum, obra) => sum + (obra.orcamentoPrevisto || 0), 0);
-      this.atualizarResumoFinanceiro();
-
       if (obras.length > 0) {
         this.obraSelecionada = obras[0].name;
         this.selectedObraId = obras[0].id;
@@ -174,11 +117,14 @@ export class DashboardComponent implements OnInit {
       }
 
       this.carregarMovimentacoes();
+      this.progressoMedio = obras.length
+        ? Math.round(obras.reduce((sum, obra) => sum + (Number(obra.progresso) || 0), 0) / obras.length)
+        : 0;
     });
 
     this.etapasService.getAll().subscribe((etapas: Etapa[]) => {
       this.etapas = etapas;
-      if (etapas.length > 0) {
+      if (etapas.length > 0 && !this.obras.length) {
         const mediaProgresso = etapas.reduce((sum: number, e: Etapa) => sum + e.progresso, 0) / etapas.length;
         this.progressoMedio = Math.round(mediaProgresso);
       }
@@ -187,12 +133,62 @@ export class DashboardComponent implements OnInit {
     this.carregarMateriais();
   }
 
-  get equipeAtiva(): number {
-    return 0;
+  get equipeAtiva(): string { return '—'; }
+  get atividadesConcluidas(): string { return '—'; }
+
+  get obraAtual(): Obra | undefined {
+    return this.obras.find(obra => obra.id === this.selectedObraId);
   }
 
-  get atividadesConcluidas(): number {
-    return 0;
+  get alertaFinanceiro(): string {
+    if (!this.resumoFinanceiro.orcamentoTotal) return 'Orçamento não informado';
+    const progresso = Number(this.obraAtual?.progresso) || 0;
+    return this.consumoPercentual - progresso > 10
+      ? 'Compras acima do progresso físico: investigue este sinal'
+      : 'Sem diferença relevante entre compras e progresso físico';
+  }
+
+  get serieOrcadoVsRealExibida(): { mes: string; real: number }[] {
+    const quantidadeMeses = this.periodoGrafico === '1a' ? 12 : 6;
+    const hoje = new Date();
+    const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - quantidadeMeses + 1, 1);
+    return Array.from({ length: quantidadeMeses }, (_, index) => {
+      const data = new Date(inicio.getFullYear(), inicio.getMonth() + index, 1);
+      const real = this.movimentacoes
+        .filter(m => {
+          const movimentoData = new Date(`${m.data_movimentacao}T00:00:00`);
+          return m.tipo === 'entrada' &&
+            movimentoData.getFullYear() === data.getFullYear() &&
+            movimentoData.getMonth() === data.getMonth();
+        })
+        .reduce((total, m) => total + (Number(m.valor_total ?? (m.quantidade * m.valor_unitario)) || 0), 0);
+      return { mes: data.toLocaleDateString('pt-BR', { month: 'short' }), real };
+    });
+  }
+
+  alturaBarra(valor: number): number {
+    const maximo = Math.max(1, ...this.serieOrcadoVsRealExibida.map(item => item.real));
+    return Math.max(2, (valor / maximo) * 100);
+  }
+
+  get diarioObra(): { dia: string; mes: string; titulo: string; tipo: string; descricao: string; detalhe: string; hora: string; imagem: string }[] {
+    return [...this.movimentacoes]
+      .sort((a, b) => new Date(b.data_movimentacao).getTime() - new Date(a.data_movimentacao).getTime())
+      .slice(0, 5)
+      .map(m => {
+        const data = new Date(`${m.data_movimentacao}T00:00:00`);
+        const valor = Number(m.valor_total ?? (m.quantidade * m.valor_unitario)) || 0;
+        return {
+          dia: String(data.getDate()).padStart(2, '0'),
+          mes: data.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase(),
+          titulo: `${m.tipo === 'entrada' ? 'Entrada' : 'Saída'}: ${m.material_nome || 'Material'}`,
+          tipo: 'MATERIAL',
+          descricao: `${m.quantidade} ${m.material_unidade || ''}`.trim(),
+          detalhe: `Valor: R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+          hora: '',
+          imagem: ''
+        };
+      });
   }
 
   get obrasEmExecucao(): number {
@@ -211,6 +207,8 @@ export class DashboardComponent implements OnInit {
 
   carregarMovimentacoes(): void {
     if (!this.obras.length) {
+      this.movimentacoes = [];
+      this.resumoFinanceiro.orcamentoTotal = 0;
       this.resumoFinanceiro.gastoAtual = 0;
       this.resumoFinanceiro.restante = this.resumoFinanceiro.orcamentoTotal - this.resumoFinanceiro.gastoAtual;
       this.consumoPercentual = 0;
@@ -218,18 +216,26 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    const requests = this.obras.map((obra) =>
+    const obrasSelecionadas = this.obraAtual ? [this.obraAtual] : this.obras;
+    this.resumoFinanceiro.orcamentoTotal = obrasSelecionadas.reduce(
+      (total, obra) => total + (Number(obra.orcamentoPrevisto) || 0), 0
+    );
+    const requests = obrasSelecionadas.map((obra) =>
       this.movimentacoesService.getAll(obra.id).pipe(catchError(() => of([])))
     );
 
     forkJoin(requests).subscribe((movimentacoesArray) => {
       const movimentacoes = movimentacoesArray.flat();
+      this.movimentacoes = movimentacoes;
       const saidas = movimentacoes.filter((m) => m.tipo === 'saida');
+      const compras = movimentacoes.filter((m) => m.tipo === 'entrada');
       this.materiaisSaidasCount = saidas.length;
-      this.resumoFinanceiro.gastoAtual = saidas.reduce(
+      this.resumoFinanceiro.gastoAtual = compras.reduce(
         (sum, mov) => sum + ((mov.valor_total ?? (mov.quantidade * mov.valor_unitario)) || 0),
         0
       );
+      this.serieEvolucaoGastos = this.serieOrcadoVsRealExibida.map(item => item.real);
+      this.resumoFinanceiro.gastoPeriodo = this.serieEvolucaoGastos.reduce((total, value) => total + value, 0);
       this.atualizarResumoFinanceiro();
     });
   }
@@ -243,7 +249,6 @@ export class DashboardComponent implements OnInit {
 
   atualizarResumoFinanceiro(): void {
     this.resumoFinanceiro.restante = this.resumoFinanceiro.orcamentoTotal - this.resumoFinanceiro.gastoAtual;
-    this.resumoFinanceiro.previsaoFinal = Math.round(this.resumoFinanceiro.gastoAtual * 1.337);
     this.consumoPercentual = this.resumoFinanceiro.orcamentoTotal
       ? Math.round((this.resumoFinanceiro.gastoAtual / this.resumoFinanceiro.orcamentoTotal) * 100)
       : 0;
@@ -255,7 +260,7 @@ export class DashboardComponent implements OnInit {
     }
     const largura = 240;
     const altura = 78;
-    const max = Math.max(...this.serieEvolucaoGastos);
+    const max = Math.max(1, ...this.serieEvolucaoGastos);
     return this.serieEvolucaoGastos
       .map((valor, i) => {
         const x = (i / (this.serieEvolucaoGastos.length - 1)) * largura;
@@ -263,10 +268,6 @@ export class DashboardComponent implements OnInit {
         return `${x},${y}`;
       })
       .join(' ');
-  }
-
-  get serieOrcadoVsRealExibida(): { mes: string; orcado: number; real: number }[] {
-    return this.periodoGrafico === '1a' ? this.serieOrcadoVsRealAno : this.serieOrcadoVsReal;
   }
 
   toggleObrasDropdown(): void {
@@ -279,6 +280,7 @@ export class DashboardComponent implements OnInit {
     this.selectedObraId = obra.id;
     this.obrasDropdownOpen = false;
     this.carregarChecklists(obra.id);
+    this.carregarMovimentacoes();
     this.logDashboardAction('selecionar_obra', { obra: obra.name, id: obra.id });
   }
 

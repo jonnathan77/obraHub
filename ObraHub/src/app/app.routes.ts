@@ -9,17 +9,18 @@ import { MateriaisComponent } from './pages/materiais/materiais.component';
 import { MovimentacoesComponent } from './pages/movimentacoes/movimentacoes.component';
 import { ChecklistAtividadesComponent } from './pages/checklist-atividades/checklist-atividades.component';
 import { FinanceiroComponent } from './pages/financeiro/financeiro.component';
+import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
-  { path: 'dashboard', component: DashboardComponent },
-  { path: 'relatorios', component: RelatoriosComponent },
-  { path: 'configuracoes', component: ConfiguracoesComponent },
-  { path: 'obras', component: ListaObrasComponent },
-  { path: 'obras/:id', component: DetalheObraComponent },
-  { path: 'materiais', component: MateriaisComponent },
-  { path: 'movimentacoes', component: MovimentacoesComponent },
-  { path: 'checklist-atividades', component: ChecklistAtividadesComponent },
-  { path: 'financeiro', component: FinanceiroComponent }
+  { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
+  { path: 'relatorios', component: RelatoriosComponent, canActivate: [authGuard] },
+  { path: 'configuracoes', component: ConfiguracoesComponent, canActivate: [authGuard] },
+  { path: 'obras', component: ListaObrasComponent, canActivate: [authGuard] },
+  { path: 'obras/:id', component: DetalheObraComponent, canActivate: [authGuard] },
+  { path: 'materiais', component: MateriaisComponent, canActivate: [authGuard] },
+  { path: 'movimentacoes', component: MovimentacoesComponent, canActivate: [authGuard] },
+  { path: 'checklist-atividades', component: ChecklistAtividadesComponent, canActivate: [authGuard] },
+  { path: 'financeiro', component: FinanceiroComponent, canActivate: [authGuard] }
 ];

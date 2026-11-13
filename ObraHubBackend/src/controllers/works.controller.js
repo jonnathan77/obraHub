@@ -9,11 +9,25 @@ exports.create = async (req, res) => {
       dataInicio,
       dataFimPrevista,
       orcamentoPrevisto,
+      status,
     } = req.body;
     const empresaId = req.user.empresaid;
 
     if (!nome) {
       return res.status(400).json({ error: "Nome da obra é obrigatório" });
+    }
+
+    const statusMap = {
+      planejada: "Planejada",
+      execucao: "Execucao",
+      em_execucao: "Execucao",
+      pausada: "Pausada",
+      concluida: "Concluida",
+    };
+    const statusNormalizado = statusMap[String(status || "planejada").toLowerCase()];
+    const orcamento = orcamentoPrevisto == null ? null : Number(orcamentoPrevisto);
+    if (!statusNormalizado || (orcamento !== null && (!Number.isFinite(orcamento) || orcamento < 0))) {
+      return res.status(400).json({ error: "Status ou orçamento inválido" });
     }
 
     const query = `
@@ -30,12 +44,12 @@ exports.create = async (req, res) => {
     const result = await db.query(query, [
       nome,
       cliente || null,
-      "Planejada",
+      statusNormalizado,
       empresaId,
       endereco || null,
       dataInicio || null,
       dataFimPrevista || null,
-      orcamentoPrevisto || null,
+      orcamento,
     ]);
 
     const obra = result.rows[0];
@@ -191,11 +205,14 @@ exports.update = async (req, res) => {
       const statusMap = {
         planejada: "Planejada",
         execucao: "Execucao",
+        em_execucao: "Execucao",
         pausada: "Pausada",
         concluida: "Concluida",
       };
 
-      const normalizedStatus = statusMap[status.toLowerCase()];
+      const normalizedStatus = typeof status === "string"
+        ? statusMap[status.toLowerCase()]
+        : undefined;
 
       if (!normalizedStatus) {
         return res.status(400).json({ error: "Status inválido" });
@@ -207,14 +224,22 @@ exports.update = async (req, res) => {
     }
 
     if (progresso !== undefined) {
+      const progressoNumerico = Number(progresso);
+      if (!Number.isFinite(progressoNumerico) || progressoNumerico < 0 || progressoNumerico > 100) {
+        return res.status(400).json({ error: "Progresso deve estar entre 0 e 100" });
+      }
       fieldsToUpdate.push(`progresso = $${paramCount}`);
-      values.push(Math.min(progresso, 100)); // Máximo 100%
+      values.push(progressoNumerico);
       paramCount++;
     }
 
     if (orcamentoPrevisto !== undefined) {
+      const orcamentoNumerico = Number(orcamentoPrevisto);
+      if (!Number.isFinite(orcamentoNumerico) || orcamentoNumerico < 0) {
+        return res.status(400).json({ error: "Orçamento deve ser maior ou igual a zero" });
+      }
       fieldsToUpdate.push(`orcamento_previsto = $${paramCount}`);
-      values.push(orcamentoPrevisto);
+      values.push(orcamentoNumerico);
       paramCount++;
     }
 

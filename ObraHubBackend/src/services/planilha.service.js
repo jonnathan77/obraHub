@@ -9,8 +9,14 @@ const csvParseAsync = promisify(csv);
  * @returns {number} valor limpo
  */
 function limparValor(v) {
-  if (!v && v !== 0) return 0;
-  return Number(String(v).replace(/[R$\s.]/g, '').replace(',', '.'));
+  if (typeof v === 'number') return Number.isFinite(v) ? v : NaN;
+  if (v == null || String(v).trim() === '') return NaN;
+
+  const valor = String(v).trim().replace(/[R$\s]/g, '');
+  const normalizado = valor.includes(',')
+    ? valor.replace(/\./g, '').replace(',', '.')
+    : valor;
+  return Number(normalizado);
 }
 
 /**
@@ -65,7 +71,7 @@ function mapearColunas(row, headers) {
   return {
     data: row[colData],
     valor: row[colValor],
-    tipo: row[colTipo] ? row[colTipo].toLowerCase() : 'saida' // default saida se não achar
+    tipo: row[colTipo] ? String(row[colTipo]).toLowerCase() : 'saida' // default saida se não achar
   };
 }
 
@@ -102,7 +108,7 @@ async function parseCSV(buffer) {
  */
 async function processarPlanilha(buffer, mimetype) {
   let linhasRaw;
-  if (mimetype.includes('xlsx') || mimetype.includes('xls')) {
+  if (mimetype.includes('xlsx') || mimetype.includes('xls') || mimetype.includes('spreadsheetml')) {
     linhasRaw = await parseXLSX(buffer);
   } else if (mimetype.includes('csv')) {
     linhasRaw = await parseCSV(buffer);
@@ -115,8 +121,8 @@ async function processarPlanilha(buffer, mimetype) {
   const headers = Object.keys(linhasRaw[0]);
 
   // Normalizar linhas
-  const fluxo = linhasRaw.slice(1).map(row => mapearColunas(row, headers))
-    .filter(line => line.data && !isNaN(limparValor(line.valor)))
+  const fluxo = linhasRaw.map(row => mapearColunas(row, headers))
+    .filter(line => line.data && Number.isFinite(limparValor(line.valor)) && limparValor(line.valor) >= 0)
     .map(line => ({
       data: normalizarData(line.data),
       valor: limparValor(line.valor),

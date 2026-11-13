@@ -72,9 +72,11 @@ exports.list = async (req, res) => {
  * garantindo que o material pertence à obra selecionada.
  */
 exports.create = async (req, res) => {
-  const client = await db.connect()
+  let client
+  let transactionStarted = false
 
   try {
+    client = await db.connect()
     const {
       material_nome,
       unidade,
@@ -87,20 +89,44 @@ exports.create = async (req, res) => {
 
     const empresaId = req.user.empresaid
 
-    await client.query('BEGIN')
+    const qtd = Number(quantidade)
+    const valorUnitario = Number(valor_unitario ?? 0)
+    if (!obra_id || !material_nome || !unidade || !['entrada', 'saida'].includes(tipo) ||
+        !Number.isFinite(qtd) || qtd <= 0 ||
+        !Number.isFinite(valorUnitario) || valorUnitario < 0 ||
+        !data_movimentacao || Number.isNaN(Date.parse(data_movimentacao))) {
+      return res.status(400).json({ error: 'Dados da movimentação inválidos' })
+    }
 
-    // 1️⃣ procurar material existente
+    await client.query('BEGIN')
+    transactionStarted = true
+
+    const obra = await client.query(
+      'SELECT id FROM obra WHERE id = $1 AND empresaid = $2',
+      [obra_id, empresaId]
+    )
+    if (obra.rows.length === 0) {
+      await client.query('ROLLBACK')
+      transactionStarted = false
+      return res.status(404).json({ error: 'Obra não encontrada' })
+    }
+
     let material = await client.query(
-      `SELECT id 
+      `SELECT id
        FROM material 
-       WHERE obraid = $1 AND LOWER(nome) = LOWER($2)`,
-      [obra_id, material_nome]
+       WHERE obraid = $1 AND LOWER(nome) = LOWER($2)
+       FOR UPDATE`,
+      [obra_id, String(material_nome).trim()]
     )
 
     let materialId
 
-    // 2️⃣ se não existir cria
     if (material.rows.length === 0) {
+      if (tipo === 'saida') {
+        await client.query('ROLLBACK')
+        transactionStarted = false
+        return res.status(400).json({ error: 'Não há estoque disponível para este material' })
+      }
 
       const novoMaterial = await client.query(
         `INSERT INTO material (obraid, nome, unidade)
@@ -116,7 +142,20 @@ exports.create = async (req, res) => {
       materialId = material.rows[0].id
     }
 
-    // 3️⃣ cria movimentação
+    if (tipo === 'saida') {
+      const saldo = await client.query(
+        `SELECT COALESCE(SUM(CASE WHEN tipo = 'entrada' THEN quantidade ELSE -quantidade END), 0) AS quantidade
+         FROM movimentacaomaterial
+         WHERE materialid = $1`,
+        [materialId]
+      )
+      if (Number(saldo.rows[0].quantidade) < qtd) {
+        await client.query('ROLLBACK')
+        transactionStarted = false
+        return res.status(400).json({ error: 'A quantidade de saída excede o estoque disponível' })
+      }
+    }
+
     const mov = await client.query(
       `INSERT INTO movimentacaomaterial
       (materialid, tipo, quantidade, valorunitario, datamovimentacao)
@@ -125,8 +164,8 @@ exports.create = async (req, res) => {
       [
         materialId,
         tipo,
-        quantidade,
-        valor_unitario || 0,
+        qtd,
+        valorUnitario,
         data_movimentacao
       ]
     )
@@ -139,8 +178,13 @@ exports.create = async (req, res) => {
     })
 
   } catch (err) {
-
-    await client.query('ROLLBACK')
+    if (transactionStarted && client) {
+      try {
+        await client.query('ROLLBACK')
+      } catch (rollbackError) {
+        console.error('Erro ao reverter movimentação:', rollbackError)
+      }
+    }
     console.error(err)
 
     res.status(500).json({
@@ -148,6 +192,6 @@ exports.create = async (req, res) => {
     })
 
   } finally {
-    client.release()
+    if (client) client.release()
   }
 }
